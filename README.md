@@ -22,8 +22,6 @@ apt install phpmyadmin
 
 ## Konfiguráció:
 
-(Ha nem /var/www/html a projekt gyökere)
-
 Virtual host config:
 ```bash
 sudo nano /etc/apache2/sites-available/kagos.conf
