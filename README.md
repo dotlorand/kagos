@@ -1,8 +1,6 @@
-# kagos
+## Installáció (debian):
 
-## Installáció:
-
-Webszerver:
+Webserver:
 ```bash
 apt install apache2 
 ```
