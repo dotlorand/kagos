@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # deny access
+    RewriteRule ^(backend|\.env) - [F,L]
+
+    # static fileokhoz
+    # /public/static/* fileok
+    RewriteCond %{REQUEST_URI} ^/public/static/
+    # ha a cond igaz, direktben osztja meg a file-t
+    RewriteRule ^ - [L]
+
+    # ha nem igaz, index.php-t osztja meg
+    RewriteRule . index.php [L]
+</IfModule>
