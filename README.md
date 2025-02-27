@@ -23,6 +23,7 @@ apt install phpmyadmin
 ## Konfiguráció:
 
 (Ha nem /var/www/html a projekt gyökere)
+
 Virtual host config:
 ```bash
 sudo nano /etc/apache2/sites-available/kagos.conf
@@ -44,12 +45,8 @@ sudo nano /etc/apache2/sites-available/kagos.conf
 </VirtualHost>
 ```
 
-Virtual host engedélyezése:
+Virtual host és mod_rewrite (.htaccess) engedélyezése:
 ```bash
 a2ensite kagos.conf
-```
-
-Htaccess mod_rewrite engedélyezése:
-```bash
 a2enmod rewrite
 ```
