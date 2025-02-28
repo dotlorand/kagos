@@ -1,2 +1,4 @@
-venv
-.env
+/vendor/
+/composer.phar
+/composer.lock
+/.env

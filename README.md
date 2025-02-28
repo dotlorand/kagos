@@ -1,4 +1,4 @@
-## Installáció (debian):
+# Installáció (debian):
 
 Webserver:
 ```bash
@@ -18,11 +18,11 @@ mysql_secure_installation
 apt install phpmyadmin
 ```
 
-## Konfiguráció:
+# Konfiguráció:
 
 Virtual host config:
 ```bash
-sudo nano /etc/apache2/sites-available/kagos.conf
+nano /etc/apache2/sites-available/kagos.conf
 ```
 
 ```
@@ -45,4 +45,29 @@ Virtual host és mod_rewrite (.htaccess) engedélyezése:
 ```bash
 a2ensite kagos.conf
 a2enmod rewrite
+```
+
+### Mysql config:
+
+MySQL (mariadb) belépési adatok létrehozása:
+```bash
+mysql -u root
+
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'new_password';
+FLUSH PRIVILEGES;
+```
+
+Adatbázis:
+...
+
+### Dependencies
+
+composer.phar letöltése:
+```bash
+curl -sS https://getcomposer.org/installer | php
+```
+
+Phpdotenv hozzáadása
+```bash
+php composer.phar require vlucas/phpdotenv
 ```

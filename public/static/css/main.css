@@ -1,0 +1,17 @@
+@import url("/public/static/css/components.css");
+
+:root {
+    --color: #458fb9;
+
+    --red: #c23c3c;
+    --yellow: #c2a93c;
+    --blue: #3c60c2;
+    --green: #40c23c;
+    --purple: #813cc2;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
