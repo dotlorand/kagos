@@ -1,8 +1,8 @@
 <?php
 // load dependencies
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
 
 // .env-ben levo adatokkal csatlakozzon
@@ -18,7 +18,9 @@ $connection = mysqli_connect($host, $user, $pass, $dbnm, $port);
 if (!$connection) {
     error_log("Database connection failed: " . mysqli_connect_error());
     exit("Database connection error.");
+} else {
+    echo "adatbazis mukodik";
 }
 
 // charset
-mysqli_set_charset($connection, 'utf8mb4_hungarian_ci');
+mysqli_set_charset($connection, 'utf8mb4');

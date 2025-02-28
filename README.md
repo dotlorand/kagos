@@ -1,17 +1,17 @@
 # Installáció (debian):
 
 Webserver:
-```bash
+```sh
 apt install apache2 
 ```
 
 PHP:
-```bash
+```sh
 apt install php libapache2-mod-php php-mysql php-gd
 ```
 
 MySQL server:
-```bash
+```sh
 apt install mysql-server
 mysql_secure_installation
 
@@ -21,11 +21,11 @@ apt install phpmyadmin
 # Konfiguráció:
 
 Virtual host config:
-```bash
+```sh
 nano /etc/apache2/sites-available/kagos.conf
 ```
 
-```
+```xml
 <VirtualHost *:80>
     ServerName kagos.intra
     DocumentRoot /home/projects/kagos/
@@ -41,8 +41,8 @@ nano /etc/apache2/sites-available/kagos.conf
 </VirtualHost>
 ```
 
-Virtual host és mod_rewrite (.htaccess) engedélyezése:
-```bash
+Virtual host config és mod_rewrite (.htaccess) engedélyezése:
+```sh
 a2ensite kagos.conf
 a2enmod rewrite
 ```
@@ -50,7 +50,8 @@ a2enmod rewrite
 ### Mysql config:
 
 MySQL (mariadb) belépési adatok létrehozása:
-```bash
+> E szerint kell majd a .env filet megirni
+```sql
 mysql -u root
 
 ALTER USER 'root'@'localhost' IDENTIFIED BY 'new_password';
@@ -62,12 +63,8 @@ Adatbázis:
 
 ### Dependencies
 
-composer.phar letöltése:
-```bash
+composer.phar letöltése és phpdotenv hozzáadása:
+```sh
 curl -sS https://getcomposer.org/installer | php
-```
-
-Phpdotenv hozzáadása
-```bash
 php composer.phar require vlucas/phpdotenv
 ```
