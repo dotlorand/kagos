@@ -1,3 +1,5 @@
+<?php include(__DIR__ . '/../../backend/database/connect.php'); ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

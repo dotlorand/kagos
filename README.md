@@ -50,7 +50,7 @@ a2enmod rewrite
 ### Mysql config:
 
 MySQL (mariadb) belépési adatok létrehozása:
-> E szerint kell majd a .env filet megirni
+> E szerint kell majd a .env file-t megírni
 ```sql
 mysql -u root
 

@@ -3,11 +3,11 @@
 :root {
     --color: #458fb9;
 
-    --red: #c23c3c;
-    --yellow: #c2a93c;
-    --blue: #3c60c2;
-    --green: #40c23c;
-    --purple: #813cc2;
+    --red: rgb(194, 60, 60);
+    --yellow: rgb(194, 169, 60);
+    --blue: rgb(60, 96, 194);
+    --green: rgb(64, 194, 60);
+    --purple: rgb(129, 60, 194);
 }
 
 * {

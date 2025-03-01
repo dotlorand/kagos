@@ -1,7 +1,6 @@
 <?php
 
 include(__DIR__ . '/../components/head.php');
-include(__DIR__ . '/../../backend/database/connect.php');
 
 ?>
 
