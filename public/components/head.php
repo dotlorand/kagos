@@ -15,3 +15,5 @@
     <a href="/">leaderboard</a>
     <a href="/manage">manage</a>
 </nav>
+
+<main>

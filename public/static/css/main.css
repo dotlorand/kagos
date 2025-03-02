@@ -3,15 +3,41 @@
 :root {
     --color: #458fb9;
 
-    --red: rgb(194, 60, 60);
-    --yellow: rgb(194, 169, 60);
-    --blue: rgb(60, 96, 194);
-    --green: rgb(64, 194, 60);
-    --purple: rgb(129, 60, 194);
+    --red: rgb(241, 212, 212);
+    --yellow: rgb(241, 236, 212);
+    --blue: rgb(212, 220, 241);
+    --green: rgb(212, 241, 214);
+    --purple: rgb(236, 212, 241);
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 50px;
+}
+
+.toast {
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+.toast.error {
+    background-color: var(--red);
+}
+
+.toast.success {
+    background-color: var(--green);
+}
+
+/* REMOVE THIS */
+.scroll {
+    height: 2000px;
 }
