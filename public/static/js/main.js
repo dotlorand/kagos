@@ -1,3 +1,5 @@
+// popups
+
 function popup(popupId) {
     document.getElementById(popupId).style.display = "flex";
 }
@@ -12,3 +14,13 @@ function removePopup(teamId, teamName) {
     popupElem.querySelector('#team-name-confirm').innerText = teamName;
     popup('remove-team');
 }
+
+// toast
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        document.querySelectorAll('.toast').forEach(function(toast) {
+            toast.remove();
+        });
+    }, 5000);
+});

@@ -68,6 +68,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['remove_team'])) {
     }
 }
 
+// csapat adatok, uuid
+
+if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
+    $uuid = trim($_GET['uuid']);
+
+    // regex validalas
+    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid)) {
+        $error = "Érvénytelen azonosító formátum.";
+    } else {
+        // sql elokeszites, error check majd lekerdezes
+        $stmt = mysqli_prepare($connection, "SELECT * FROM csapatok WHERE id = ?");
+        if (!$stmt) {
+            $error = "Hiba a lekérdezés előkészítésekor: " . htmlspecialchars(mysqli_error($connection), ENT_QUOTES, 'UTF-8');
+        } else {
+            mysqli_stmt_bind_param($stmt, "s", $uuid);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+    
+            if ($result && mysqli_num_rows($result) === 1) {
+                $team = mysqli_fetch_assoc($result);
+            } else {
+                $error = "A megadott csapat nem létezik.";
+            }
+            mysqli_stmt_close($stmt);
+        }
+    }
+}
+
 ?>
 <link rel="stylesheet" href="/public/static/css/pages/manage.css">
 
@@ -79,20 +107,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['remove_team'])) {
 
         if (!$result) {
             error_log("Database query failed: " . mysqli_error($connection));
-            echo "<div class='error'>Hiba a csapatok lekérdezésével.</div>";
+            $error = "Hiba a csapatok lekérdezésével.";
             exit;
         }
 
         echo "<ul>";
-        while ($team = mysqli_fetch_assoc($result)) {
-            $team_id = htmlspecialchars($team['id'], ENT_QUOTES, 'UTF-8');
-            $team_name = htmlspecialchars($team['nev'], ENT_QUOTES, 'UTF-8');
-            
+        while ($nav_team = mysqli_fetch_assoc($result)) {
+            $team_id_raw   = $nav_team['id'];
+            $team_name_raw = $nav_team['nev'];
+
+            // html escape
+            $team_id_html   = htmlspecialchars($team_id_raw, ENT_QUOTES, 'UTF-8');
+            $team_name_html = htmlspecialchars($team_name_raw, ENT_QUOTES, 'UTF-8');
+
             echo "<li>";
-            echo "<a href='/manage?uuid=" . urlencode($team_id) . "'>{$team_name}</a> ";
-            // json_encode-al kuldi at a php ertekeket js-be
-            echo "<button onclick=\"removePopup(" . htmlspecialchars(json_encode($team_id), ENT_QUOTES, 'UTF-8') . ", " . htmlspecialchars(json_encode($team_name), ENT_QUOTES, 'UTF-8') . ")\">Törlés</button>";
+            echo "<a href='/manage?uuid=" . urlencode($team_id_html) . "'>{$team_name_html}</a> ";
+            
+            // encoding ami megy js-be
+            $onclick = "removePopup(" 
+                . json_encode($team_id_raw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                . ", " 
+                . json_encode($team_name_raw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                . ")";
+
+            // beillesztes, "escape"
+            echo "<button onclick=\"" . htmlspecialchars($onclick, ENT_QUOTES, 'UTF-8') . "\">Törlés</button>";
             echo "</li>";
+            
         }
         echo "</ul>";
 
@@ -103,11 +144,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['remove_team'])) {
 </nav>
 
 <?php if (isset($error)) : ?>
-    <div class="toast error"><?php echo htmlspecialchars($error); ?></div>
+    <div class="toast error"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
 <?php endif; ?>
 
 <?php if (isset($success)) : ?>
-    <div class="toast success"><?php echo htmlspecialchars($success); ?></div>
+    <div class="toast success"><?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></div>
 <?php endif; ?>
 
 <div class="popup-container">
@@ -116,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['remove_team'])) {
             <h2>Csapat hozzáadása</h2>
             <button onclick="closePopup(this.closest('div[id]').id)">Mégse</button>
         </div>
-        <form action="" method="post">
+        <form action="/manage" method="post">
             <input type="text" name="nev" autocomplete="off" placeholder="Csapat név" maxlength="30">
             <input type="text" name="allamforma" autocomplete="off" placeholder="Államforma" maxlength="30">
             <input type="text" name="kontinens" autocomplete="off" placeholder="Kontinens" maxlength="30">
@@ -128,12 +169,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['remove_team'])) {
             <h2>Csapat törlése</h2>
             <button onclick="closePopup('remove-team')">Mégse</button>
         </div>
-        <form action="" method="post">
+        <form action="/manage" method="post">
             <p>Biztosan törlöd a <strong id="team-name-confirm"></strong> csapatot?</p>
             <input type="hidden" name="team_id" value="">
             <input type="submit" name="remove_team" value="Törlés">
         </form>
     </div>
 </div>
+
+<?php if (isset($team)) : ?>
+    <section class="team-dashboard">
+        <h2><?php echo htmlspecialchars($team['nev'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+        <p>Államforma: <?php echo htmlspecialchars($team['allamforma'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Kontinens: <?php echo htmlspecialchars($team['kontinens'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Bevétel: <?php echo htmlspecialchars($team['bevetel'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Termelés: <?php echo htmlspecialchars($team['termeles'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Kutatási pontok: <?php echo htmlspecialchars($team['kutatasi_pontok'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Diplomáciai pontok: <?php echo htmlspecialchars($team['diplomaciai_pontok'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Katonai pontok: <?php echo htmlspecialchars($team['katonai_pontok'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Bankok: <?php echo htmlspecialchars($team['bankok'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Gyárak: <?php echo htmlspecialchars($team['gyarak'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Egyetemek: <?php echo htmlspecialchars($team['egyetemek'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Laktanyak: <?php echo htmlspecialchars($team['laktanyak'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <p>Politikák: <?php echo htmlspecialchars($team['politikak'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+    </section>
+<?php endif; ?>
 
 <?php include(__DIR__ . '/../components/footer.php'); ?>

@@ -14,7 +14,7 @@ include(__DIR__ . '/../components/head.php');
     <thead>
         <tr>
             <th rowspan="2" style="background-color:#fff">Kör</th>
-            <th rowspan="2" style="background-color:rgb(223, 223, 223)">Állam neve</th>
+            <th rowspan="2" style="background-color:rgb(223, 223, 223)">Állam</th>
             <th rowspan="2" style="background-color:rgb(214, 214, 214)">Államforma</th>
             <th rowspan="2" style="background-color:rgb(201, 201, 201)">Kontinens</th>
 
@@ -24,8 +24,8 @@ include(__DIR__ . '/../components/head.php');
             <!-- 4 subheaders -->
             <th colspan="4" style="background-color:rgb(213, 243, 213)">Épületek</th>
 
-            <th rowspan="2" style="background-color:rgb(255, 209, 244)">Szövetség</th>
-            <th rowspan="2" style="background-color:rgb(229, 209, 255)">Hadsereg</th>
+            <th rowspan="2" style="background-color:rgb(255, 209, 244)">Szövetségek</th>
+            <th rowspan="2" style="background-color:rgb(229, 209, 255)">Háborúk</th>
         </tr>
         <tr class="subheaders">
             <!-- Erőforrások -->
@@ -57,8 +57,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -73,8 +73,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -89,8 +89,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -105,8 +105,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -121,8 +121,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -137,8 +137,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <th rowspan="6" class="kor">2</th>
@@ -154,8 +154,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -170,8 +170,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -186,8 +186,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -202,8 +202,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -218,8 +218,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -234,8 +234,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <th rowspan="6" class="kor">3</th>
@@ -251,8 +251,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -267,8 +267,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -283,8 +283,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -299,8 +299,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -315,8 +315,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
         <tr>
             <td>Kalmár Köztársaság</td>
@@ -331,8 +331,8 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
             <td>1</td>
             <td>2</td>
-            <td>Kisebb Szöv.</td>
-            <td>6</td>
+            <td>0</td>
+            <td>0</td>
         </tr>
     </tbody>
 </table>
