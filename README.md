@@ -20,7 +20,7 @@ apt install phpmyadmin
 
 # Konfiguráció:
 
-Virtual host config:
+### Virtual host config:
 ```sh
 nano /etc/apache2/sites-available/kagos.conf
 ```
@@ -41,16 +41,16 @@ nano /etc/apache2/sites-available/kagos.conf
 </VirtualHost>
 ```
 
-Virtual host config és mod_rewrite (.htaccess) engedélyezése:
+Virtual host file és mod_rewrite (.htaccess) engedélyezése:
 ```sh
 a2ensite kagos.conf
 a2enmod rewrite
 ```
 
 ### Mysql config:
+> E szerint kell majd a .env file-t megírni
 
 MySQL (mariadb) belépési adatok létrehozása:
-> E szerint kell majd a .env file-t megírni
 ```sql
 mysql -u root
 
@@ -59,7 +59,7 @@ FLUSH PRIVILEGES;
 ```
 
 Adatbázis:
-...
+...ide fog jönni a db import query...
 
 ### Dependencies
 
