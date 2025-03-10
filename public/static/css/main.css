@@ -1,4 +1,5 @@
 @import url("/public/static/css/components.css");
+@import url("/public/static/css/pages/leaderboard.css");
 
 :root {
     --color: #458fb9;
@@ -39,5 +40,5 @@ main {
 
 /* REMOVE THIS */
 .scroll {
-    height: 2000px;
+    height: 300px;
 }

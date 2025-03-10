@@ -44,7 +44,7 @@ include(__DIR__ . '/../components/head.php');
     </thead>
     <tbody>
         <tr>
-            <th rowspan="6" class="kor">1</th>
+            <th rowspan="6" class="round">1</th>
             <td>Kalmár Köztársaság</td>
             <td>Köztársaság</td>
             <td>Lajos</td>
@@ -141,7 +141,7 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
         </tr>
         <tr>
-            <th rowspan="6" class="kor">2</th>
+            <th rowspan="6" class="round">2</th>
             <td>Kalmár Köztársaság</td>
             <td>Köztársaság</td>
             <td>Lajos</td>
@@ -238,7 +238,7 @@ include(__DIR__ . '/../components/head.php');
             <td>0</td>
         </tr>
         <tr>
-            <th rowspan="6" class="kor">3</th>
+            <th rowspan="6" class="round current">3</th>
             <td>Kalmár Köztársaság</td>
             <td>Köztársaság</td>
             <td>Lajos</td>

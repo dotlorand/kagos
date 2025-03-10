@@ -1,3 +1,32 @@
+/**
+ * ----------------------
+ *      LEADERBOARD
+ * ----------------------
+ */
+
+// stuck thead shadow
+
+document.addEventListener('DOMContentLoaded', function() {
+    const thead = document.querySelector('table thead');
+    if (!thead) return;
+
+    window.addEventListener('scroll', function() {
+        // check pos based on viewport
+        const rect = thead.getBoundingClientRect();
+        if (rect.top <= 0) {
+            thead.classList.add('stuck');
+        } else {
+            thead.classList.remove('stuck');
+        }
+    });
+});
+
+/**
+ * ------------------
+ *       MANAGE
+ * ------------------
+ */
+
 // popups
 
 function popup(popupId) {
@@ -22,5 +51,5 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.toast').forEach(function(toast) {
             toast.remove();
         });
-    }, 5000);
+    }, 3000);
 });

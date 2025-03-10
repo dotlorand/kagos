@@ -17,6 +17,10 @@ switch ($request) {
     case 'manage':
         require __DIR__ . '/public/pages/manage.php';
         break;
+    
+    case 'test':
+        require __DIR__ . '/public/pages/test.html';
+        break;
 
     default:
         http_response_code(404);
