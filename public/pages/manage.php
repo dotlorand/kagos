@@ -87,6 +87,66 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
     }
 }
 
+if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
+    $team_id = trim($_POST['team_id'] ?? '');
+    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $team_id)) {
+        $error = "Érvénytelen csapat azonosító.";
+    } else {
+        $allamforma = trim($_POST['allamforma'] ?? '');
+        $kontinens = trim($_POST['kontinens'] ?? '');
+        $bevetel = (int) ($_POST['bevetel'] ?? 0);
+        $termeles = (int) ($_POST['termeles'] ?? 0);
+        $kutatasi_pontok = (int) ($_POST['kutatasi_pontok'] ?? 0);
+        $diplomaciai_pontok = (int) ($_POST['diplomaciai_pontok'] ?? 0);
+        $katonai_pontok = (int) ($_POST['katonai_pontok'] ?? 0);
+        $bankok = (int) ($_POST['bankok'] ?? 0);
+        $gyarak = (int) ($_POST['gyarak'] ?? 0);
+        $egyetemek = (int) ($_POST['egyetemek'] ?? 0);
+        $laktanyak = (int) ($_POST['laktanyak'] ?? 0);
+        $politikak = trim($_POST['politikak'] ?? '');
+        if ($allamforma === '' || $kontinens === '') {
+            $error = "Hiányzó adatok!";
+        } elseif (json_decode($politikak) === null && $politikak !== "") {
+            $error = "Érvénytelen JSON formátum a politikákhoz.";
+        } else {
+            $valid_allamforma = ['demokratikus', 'test'];
+            if (!in_array($allamforma, $valid_allamforma)) {
+                $error = "Érvénytelen államforma.";
+            } else {
+                $stmt = mysqli_prepare($connection, "UPDATE csapatok SET allamforma = ?, kontinens = ?, bevetel = ?, termeles = ?, kutatasi_pontok = ?, diplomaciai_pontok = ?, katonai_pontok = ?, bankok = ?, gyarak = ?, egyetemek = ?, laktanyak = ?, politikak = ? WHERE id = ?");
+                if (!$stmt) {
+                    $error = "Hiba a lekérdezés előkészítésénél: " . mysqli_error($connection);
+                } else {
+                    mysqli_stmt_bind_param(
+                        $stmt,
+                        "ssiiiiiiiiiss",
+                        $allamforma,
+                        $kontinens,
+                        $bevetel,
+                        $termeles,
+                        $kutatasi_pontok,
+                        $diplomaciai_pontok,
+                        $katonai_pontok,
+                        $bankok,
+                        $gyarak,
+                        $egyetemek,
+                        $laktanyak,
+                        $politikak,
+                        $team_id
+                    );
+                    if (mysqli_stmt_execute($stmt)) {
+                        header("Location: /manage?uuid=" . urlencode($team_id));
+                        exit;
+                    } else {
+                        $error = "Hiba az adatok frissítésekor: " . mysqli_stmt_error($stmt);
+                    }
+                    mysqli_stmt_close($stmt);
+                }
+            }
+        }
+    }
+}
+
 ?>
 
 <style>
@@ -205,7 +265,7 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
 <?php if (isset($team)) : ?>
     <div class="container">
         <h1>Kezdő adatok:</h1>
-        <form action="process_form.php" method="post">
+        <form action="/manage?uuid=<?php echo urlencode($team['id'] ?? ''); ?>" method="post">
             <input type="hidden" name="team_id" value="<?php echo htmlspecialchars($team['id'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
             <div class="card-container">
             <div class="card team-info-card">
@@ -293,50 +353,11 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
                     </div>
                 </div>
             </div>
-            <input type="submit" class="submit-btn" value="Kezdő adatok megerősítése">
+            <input type="submit" class="submit-btn" name="kezdo_megerosites" value="Kezdő adatok megerősítése">
         </form>
     </div>
 
-<script>
-    // Politikák chip selection script
-    const select = document.getElementById('politikak-select');
-    const chipsContainer = document.getElementById('chips-container');
-    const hiddenInput = document.getElementById('politikak-hidden');
-
-    let selectedOptions = [];
-
-    function updateHiddenInput() {
-        hiddenInput.value = JSON.stringify(selectedOptions);
-    }
-
-    select.addEventListener('change', function() {
-        const value = select.value;
-        const text = select.options[select.selectedIndex].text;
-        if (value && !selectedOptions.some(opt => opt.value === value)) {
-            selectedOptions.push({ value, text });
-            const chip = document.createElement('span');
-            chip.className = 'chip';
-            chip.textContent = text;
-            chip.dataset.value = value;
-            chip.addEventListener('click', function() {
-                chipsContainer.removeChild(chip);
-                selectedOptions = selectedOptions.filter(opt => opt.value !== value);
-                const option = document.createElement('option');
-                option.value = value;
-                option.text = text;
-                select.appendChild(option);
-                updateHiddenInput();
-            });
-            chipsContainer.appendChild(chip);
-            const optionToRemove = select.querySelector(`option[value="${value}"]`);
-            if (optionToRemove) {
-                optionToRemove.remove();
-            }
-            updateHiddenInput();
-            select.value = "";
-        }
-    });
-</script>
+<script src="/public/static/js/pages/manage.js"></script>
 <?php else: ?>
     Válassz ki csapatot
 <?php endif; ?>
