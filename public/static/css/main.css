@@ -5,9 +5,16 @@
     --color: #458fb9;
 
     --red: rgb(241, 212, 212);
+    --darkred: rgb(138, 44, 44);
+
     --yellow: rgb(241, 236, 212);
+
     --blue: rgb(212, 220, 241);
+    --darkblue: rgb(29, 52, 110);
+
     --green: rgb(212, 241, 214);
+    --darkgreen: rgb(17, 85, 22);
+
     --purple: rgb(236, 212, 241);
 }
 
@@ -38,7 +45,6 @@ main {
     background-color: var(--green);
 }
 
-/* REMOVE THIS */
 .scroll {
     height: 300px;
 }

@@ -20,6 +20,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['add_team'])) {
         } else {
             mysqli_stmt_bind_param($stmt, "sss", $nev, $allamforma, $kontinens);
             if (mysqli_stmt_execute($stmt)) {
+                // get teamid
+                $query = "SELECT id FROM csapatok WHERE nev = ? AND allamforma = ? AND kontinens = ? ORDER BY letrehozva DESC LIMIT 1";
+                $qstmt = mysqli_prepare($connection, $query);
+                if ($qstmt) {
+                    mysqli_stmt_bind_param($qstmt, "sss", $nev, $allamforma, $kontinens);
+                    mysqli_stmt_execute($qstmt);
+                    mysqli_stmt_bind_result($qstmt, $team_id);
+                    if (mysqli_stmt_fetch($qstmt)) {
+                        header("Location: /manage?uuid=" . urlencode($team_id));
+                        exit;
+                    }
+                    mysqli_stmt_close($qstmt);
+                }
                 $success = "Csapat hozzáadva!";
             } else {
                 $error = "Hiba: " . mysqli_stmt_error($stmt);
@@ -87,6 +100,8 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
     }
 }
 
+// csapat update
+
 if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
     $team_id = trim($_POST['team_id'] ?? '');
     if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $team_id)) {
@@ -108,7 +123,21 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
             $error = "Hiányzó adatok!";
         } elseif (json_decode($politikak) === null && $politikak !== "") {
             $error = "Érvénytelen JSON formátum a politikákhoz.";
-        } else {
+        } else if (
+            $bevetel > 99999 || 
+            $termeles > 99999 || 
+            $kutatasi_pontok > 99999 || 
+            $diplomaciai_pontok > 99999 || 
+            $katonai_pontok > 99999 || 
+            $bankok > 99999 || 
+            $gyarak > 99999 || 
+            $egyetemek > 99999 || 
+            $laktanyak > 99999
+        ) {
+            $error = "Egy vagy több érték túl magas (Max: 99999)";
+        }
+        
+        else {
             $valid_allamforma = ['demokratikus', 'test'];
             if (!in_array($allamforma, $valid_allamforma)) {
                 $error = "Érvénytelen államforma.";
@@ -169,36 +198,30 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
             exit;
         }
 
-        echo "<ul>";
         while ($nav_team = mysqli_fetch_assoc($result)) {
             $team_id_raw   = $nav_team['id'];
             $team_name_raw = $nav_team['nev'];
-
+            
             // html escape
             $team_id_html   = htmlspecialchars($team_id_raw, ENT_QUOTES, 'UTF-8');
             $team_name_html = htmlspecialchars($team_name_raw, ENT_QUOTES, 'UTF-8');
 
-            echo "<li>";
-            echo "<a href='/manage?uuid=" . urlencode($team_id_html) . "'>{$team_name_html}</a> [Még nincs kész] ";
-            
-            // encoding ami megy js-be
-            $onclick = "removePopup(" 
-                . json_encode($team_id_raw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-                . ", " 
-                . json_encode($team_name_raw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-                . ")";
+            $active_class = (isset($team) && $team['id'] === $team_id_raw) ? 'active' : '';
 
-            // beillesztes, "escape"
-            echo "<button onclick=\"" . htmlspecialchars($onclick, ENT_QUOTES, 'UTF-8') . "\">Törlés</button>";
+            echo "<li>";
+            echo "<a href='/manage?uuid=" . urlencode($team_id_html) . "' class='{$active_class}'>{$team_name_html}</a>";
+            
             echo "</li>";
             
         }
-        echo "</ul>";
 
         mysqli_free_result($result);
         ?>
+        <button onclick="popup('add-team')"><img class="icon" src="/public/static/icons/plus.svg">Új csapat</button>
     </ul>
-    <button onclick="popup('add-team')">Új csapat</button>
+    <form action="" method="post">
+        <button type="submit"><img class="icon" src="/public/static/icons/leaf.svg">Játék indítása</button>
+    </form>
 </nav>
 
 <?php if (isset($error)) : ?>
@@ -264,8 +287,20 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
 
 <?php if (isset($team)) : ?>
     <div class="container">
-        <h1>Kezdő adatok:</h1>
-        <form action="/manage?uuid=<?php echo urlencode($team['id'] ?? ''); ?>" method="post">
+        <div class="container-header">
+            <h1><?php echo htmlspecialchars($team['nev'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h1>
+            <?php
+                $onclick = "removePopup(" 
+                            . json_encode($team['id'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                            . ", " 
+                            . json_encode($team['nev'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                            . ")";
+            ?>
+            <button onclick="<?php echo htmlspecialchars($onclick, ENT_QUOTES, 'UTF-8'); ?>">
+                Csapat törlése
+            </button>
+        </div>
+        <form class="init-form" action="/manage?uuid=<?php echo urlencode($team['id'] ?? ''); ?>" method="post">
             <input type="hidden" name="team_id" value="<?php echo htmlspecialchars($team['id'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
             <div class="card-container">
             <div class="card team-info-card">
@@ -363,4 +398,4 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
 <?php endif; ?>
 
 
-<?php include(__DIR__ . '/../components/footer.php'); ?>
+<?php include(__DIR__ . '/../components/footer.html'); ?>

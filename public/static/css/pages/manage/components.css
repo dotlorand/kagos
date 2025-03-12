@@ -1,0 +1,84 @@
+/* navigation */
+
+nav.teams-nav {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    width: 1200px;
+    align-self: center;
+    justify-content: space-between;
+}
+
+nav.teams-nav ul {
+    display: flex;
+    gap: 10px;
+}
+
+nav.teams-nav ul > button {
+    padding-inline: 10px;
+    cursor: pointer;
+    background-color: var(--green);
+    border: 1px solid var(--darkgreen);
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    gap: 10px;
+}
+
+nav.teams-nav > form button {
+    padding-inline: 10px;
+    cursor: pointer;
+    background-color: var(--darkblue);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    gap: 10px;
+    height: 100%;
+}
+
+nav.teams-nav > form button img {
+    filter: invert(1);
+}
+
+nav.teams-nav li {
+    list-style: none;
+    display: flex;
+}
+
+nav.teams-nav li a {
+    padding: 10px;
+    border-bottom: 2px solid black;
+    text-decoration: none;
+    color: black;
+}
+nav.teams-nav li a:hover {
+    background-color: rgb(202, 202, 202);
+}
+nav.teams-nav li a.active {
+    background-color: gray;
+    color: white;
+}
+
+nav.teams-nav li button {
+    padding-inline: 2px;
+    background-color: var(--darkred);
+    border: none;
+    cursor: pointer;
+}
+nav.teams-nav li button:hover {
+    opacity: .7;
+}
+
+nav.teams-nav li button .icon {
+    filter: invert(1);
+}
+
+
+
+/* other */
+
+hr {
+    margin-bottom: 10px;
+}

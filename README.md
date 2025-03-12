@@ -66,7 +66,7 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY 'new_password';
 FLUSH PRIVILEGES;
 ```
 
-adatbazis:
+import:
 ```
 -- phpMyAdmin SQL Dump
 -- version 5.2.1deb1

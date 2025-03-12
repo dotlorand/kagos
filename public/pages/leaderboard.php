@@ -338,4 +338,4 @@ include(__DIR__ . '/../components/head.php');
 </table>
 <div class="scroll"></div>
 
-<?php include(__DIR__ . '/../components/footer.php'); ?>
+<?php include(__DIR__ . '/../components/footer.html'); ?>
