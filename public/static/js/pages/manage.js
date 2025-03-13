@@ -1,3 +1,39 @@
+// popups
+
+function popup(popupId) {
+    document.getElementById(popupId).style.display = "flex";
+    document.getElementById("popup-container").style.display = "flex";
+}
+
+function closePopup() {
+    const container = document.getElementById("popup-container");
+    Array.from(container.children).forEach(child => {
+        if (!child.classList.contains("popup-bg")) {
+            child.style.display = "none";
+        }
+    });
+    container.style.display = "none";
+}
+
+function removePopup(teamId, teamName) {
+    var popupElem = document.getElementById('remove-team');
+    popupElem.querySelector('input[name="team_id"]').value = teamId;
+    popupElem.querySelector('#team-name-confirm').innerText = teamName;
+    popup('remove-team');
+}
+
+// toast
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        document.querySelectorAll('.toast').forEach(function(toast) {
+            toast.remove();
+        });
+    }, 3000);
+});
+
+// init
+
 const select = document.getElementById('politikak-select');
 const chipsContainer = document.getElementById('chips-container');
 const hiddenInput = document.getElementById('politikak-hidden');
@@ -67,4 +103,43 @@ select.addEventListener('change', function() {
         updateHiddenInput();
         select.value = "";
     }
+});
+
+
+// detect changes
+
+document.addEventListener("DOMContentLoaded", function() {
+    // get form and save button
+    const form = document.querySelector("form.init-form");
+    if (!form) return;
+    const saveButton = form.querySelector("input[type='submit']");
+    
+    // get init
+    const initialData = {};
+    Array.from(form.elements).forEach(el => {
+        if (el.name) {
+            initialData[el.name] = el.value;
+        }
+    });
+    
+    let unsavedChanges = false;
+    
+    function checkForChanges() {
+        unsavedChanges = false;
+        Array.from(form.elements).forEach(el => {
+            if (el.name && initialData[el.name] !== el.value) {
+                unsavedChanges = true;
+            }
+        });
+
+        if (unsavedChanges) {
+            saveButton.classList.add("highlight");
+        } else {
+            saveButton.classList.remove("highlight");
+        }
+    }
+    
+    // fieldeket nez folyamatosan
+    form.addEventListener("input", checkForChanges);
+    form.addEventListener("change", checkForChanges);
 });

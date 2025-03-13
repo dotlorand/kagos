@@ -232,28 +232,29 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
     <div class="toast success"><?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></div>
 <?php endif; ?>
 
-<div class="popup-container">
-    <div id="add-team">
+<div id="popup-container">
+    <div class="popup-bg" onclick="closePopup()"></div>
+    <div class="popup-block" id="add-team">
         <div class="popup-header">
             <h2>Csapat hozzáadása</h2>
-            <button onclick="closePopup(this.closest('div[id]').id)">Mégse</button>
+            <button onclick="closePopup()"><img class="icon" src="/public/static/icons/close.svg" alt="Mégse" title="Mégse"></button>
         </div>
         <form action="/manage" method="post">
-            <input type="text" name="nev" autocomplete="off" placeholder="Csapat név" maxlength="30">
-            <select name="allamforma">
+            <input required type="text" name="nev" autocomplete="off" placeholder="Csapat név" maxlength="30">
+            <select required name="allamforma">
                 <option value="" disabled selected>Válassz államformát</option>
                 <option value="demokratikus">Demokratikus</option>
                 <option value="test">test</option>
             </select>
-            <input type="text" name="kontinens" autocomplete="off" placeholder="Kontinens" maxlength="30">
+            <input required type="text" name="kontinens" autocomplete="off" placeholder="Kontinens" maxlength="30">
             <input type="submit" name="add_team" value="Hozzáadás">
         </form>
     </div>
 
-    <div id="remove-team">
+    <div class="popup-block" id="remove-team">
         <div class="popup-header">
             <h2>Csapat törlése</h2>
-            <button onclick="closePopup('remove-team')">Mégse</button>
+            <button onclick="closePopup()"><img class="icon" src="/public/static/icons/close.svg" alt="Mégse" title="Mégse"></button>
         </div>
         <form action="/manage" method="post">
             <p>Biztosan törlöd a <strong id="team-name-confirm"></strong> csapatot?</p>
@@ -288,7 +289,7 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
 <?php if (isset($team)) : ?>
     <div class="container">
         <div class="container-header">
-            <h1><?php echo htmlspecialchars($team['nev'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h1>
+            <h1><span><?php echo htmlspecialchars($team['nev'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span> kezdő tőkéje</h1>
             <?php
                 $onclick = "removePopup(" 
                             . json_encode($team['id'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
@@ -392,10 +393,10 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
         </form>
     </div>
 
-<script src="/public/static/js/pages/manage.js"></script>
 <?php else: ?>
     Válassz ki csapatot
 <?php endif; ?>
 
 
+<script src="/public/static/js/pages/manage.js"></script>
 <?php include(__DIR__ . '/../components/footer.html'); ?>

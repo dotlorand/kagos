@@ -10,6 +10,15 @@
     margin-bottom: 12px;
 }
 
+.container-header > h1 {
+    font-weight: 100;
+}
+
+.container-header > h1 span {
+    color: var(--darkblue);
+    font-weight: 600;
+}
+
 .container-header > button {
     border: none;
     padding: 10px;
@@ -121,6 +130,12 @@
 
 .submit-btn:hover {
     border: 1px solid gray;
+}
+
+.submit-btn.highlight {
+    background-color: var(--darkgreen);
+    color: white;
+    border: 1px solid black;
 }
 
 @media (max-width: 768px) {
