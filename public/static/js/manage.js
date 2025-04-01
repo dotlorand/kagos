@@ -42,9 +42,13 @@ let selectedOptions = [];
 
 function updateHiddenInput() {
     hiddenInput.value = JSON.stringify(selectedOptions);
+    const form = document.querySelector("form.init-form");
+    if (form) {
+        form.dispatchEvent(new Event("input"));
+    }
 }
 
-// irja ki a chipeket
+// politika chipek
 window.addEventListener('DOMContentLoaded', function() {
     try {
         const existing = JSON.parse(hiddenInput.value || "[]");
@@ -57,9 +61,11 @@ window.addEventListener('DOMContentLoaded', function() {
                 chip.dataset.value = item.value;
                 chip.addEventListener('click', function() {
                     chipsContainer.removeChild(chip);
-                    selectedOptions = selectedOptions.filter(opt => opt.value !== item.value);
+                    // Use the chip's own dataset value
+                    const chipValue = this.dataset.value;
+                    selectedOptions = selectedOptions.filter(opt => opt.value !== chipValue);
                     const option = document.createElement('option');
-                    option.value = item.value;
+                    option.value = chipValue;
                     option.text = item.text;
                     select.appendChild(option);
                     updateHiddenInput();
@@ -76,7 +82,6 @@ window.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// add/remove chip
 select.addEventListener('change', function() {
     const value = select.value;
     const text = select.options[select.selectedIndex].text;
@@ -88,9 +93,10 @@ select.addEventListener('change', function() {
         chip.dataset.value = value;
         chip.addEventListener('click', function() {
             chipsContainer.removeChild(chip);
-            selectedOptions = selectedOptions.filter(opt => opt.value !== value);
+            const chipValue = this.dataset.value;
+            selectedOptions = selectedOptions.filter(opt => opt.value !== chipValue);
             const option = document.createElement('option');
-            option.value = value;
+            option.value = chipValue;
             option.text = text;
             select.appendChild(option);
             updateHiddenInput();

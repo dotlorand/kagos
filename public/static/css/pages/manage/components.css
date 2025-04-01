@@ -4,7 +4,7 @@ nav.teams-nav {
     display: flex;
     gap: 20px;
     margin-bottom: 20px;
-    width: 1200px;
+    width: 1300px;
     max-width: 100%;
     align-self: center;
     justify-content: space-between;
@@ -153,4 +153,9 @@ nav.teams-nav li button .icon {
 
 hr {
     margin-bottom: 10px;
+}
+
+.notfound {
+    text-align: center;
+    align-self: center;
 }

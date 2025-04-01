@@ -18,10 +18,6 @@ table {
     border-right: 2px solid black;
 }
 
-tbody tr:nth-child(6n) > * {
-    border-bottom: 3px solid black;
-}
-
 thead {
     position: sticky;
     top: 0;
@@ -65,14 +61,9 @@ table th.round {
     pointer-events: none;
 }
 
-table th.round.current {
-    border: 3px solid rgb(0, 0, 0);
-    border-right: none;
-}
-
 table tr:nth-child(even){background-color: #ebebeb;}
 table tr:nth-child(odd){background-color: white;}
 
 /* line and cell highlight on hover */
-tr:hover {background-color: #cccccc !important;}
-td:hover {background-color: #b6b6b6 !important;}
+tr:hover {background-color: #dddddd !important;}
+td:hover {background-color: #cacaca !important;}

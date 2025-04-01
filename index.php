@@ -11,15 +11,15 @@ $request = trim($request, '/');
 
 switch ($request) {
     case '':
-        require __DIR__ . '/public/pages/leaderboard.php';
+        require __DIR__ . '/backend/source/pages/leaderboard.php';
         break;
 
-    case 'manage':
-        require __DIR__ . '/public/pages/manage.php';
+    case 'init':
+        require __DIR__ . '/backend/source/pages/init.php';
         break;
-    
-    case 'test':
-        require __DIR__ . '/public/pages/test.html';
+
+    case 'manage-game':
+        require __DIR__ . '/backend/source/pages/manage_game.php';
         break;
 
     default:

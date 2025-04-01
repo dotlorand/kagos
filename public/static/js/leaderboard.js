@@ -1,11 +1,4 @@
-/**
- * ----------------------
- *      LEADERBOARD
- * ----------------------
- */
-
-// stuck thead shadow
-
+// shadow on stuck thead
 document.addEventListener('DOMContentLoaded', function() {
     const thead = document.querySelector('table thead');
     if (!thead) return;

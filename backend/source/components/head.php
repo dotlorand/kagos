@@ -1,4 +1,4 @@
-<?php include(__DIR__ . '/../../backend/database/connect.php'); ?>
+<?php include(__DIR__ . '/../../database/connect.php'); ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,8 +12,10 @@
 <body>
 
 <nav>
-    <a href="/">leaderboard</a>
-    <a href="/manage">manage</a>
+    <span>dev nav</span>
+    <a href="/">[leaderboard]</a>
+    <a href="/init">[init]</a>
+    <a href="/manage-game">[manage]</a>
 </nav>
 
 <main>
