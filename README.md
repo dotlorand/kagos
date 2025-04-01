@@ -12,7 +12,7 @@ apt install php libapache2-mod-php php-mysql php-gd
 
 MySQL server:
 ```sh
-apt install mysql-server
+apt install mariadb-server
 mysql_secure_installation
 
 apt install phpmyadmin
@@ -66,7 +66,13 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY 'new_password';
 FLUSH PRIVILEGES;
 ```
 
-import:
+Tables:
+```
+csapatok
+jatekmenet
+```
+
+Import:
 ```
 -- phpMyAdmin SQL Dump
 -- version 5.2.1deb1
