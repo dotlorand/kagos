@@ -25,6 +25,9 @@ apt install phpmyadmin
 nano /etc/apache2/sites-available/kagos.conf
 ```
 
+> TLS-hez port 443 és certification kell <br>
+> Segítség: https://serverfault.com/questions/744960/configuring-ssl-with-virtual-hosts-under-apache-and-centos
+
 ```xml
 <VirtualHost *:80>
     ServerName kagos.intra
