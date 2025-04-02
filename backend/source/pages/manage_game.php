@@ -7,8 +7,8 @@ if (get_game_phase($connection) !== 'active') {
     exit;
 }
 
-// end round (nevcsere kell > next_round)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['end_round'])) {
+// next round
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['next_round'])) {
     if (process_game_round($connection)) {
         header("Location: /manage-game");
         exit;
@@ -17,27 +17,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['end_round'])) {
     }
 }
 
-$current_round = get_current_round($connection);
+// ==========================================
+//                  TUDOMÁNY
+// ==========================================
 
-$actions = [];
-if ($current_round % 2 === 1) {
-    $actions[] = ['label' => 'Politika tervezése', 'link' => '/actions/plan_policy.php'];
-    $actions[] = ['label' => 'Tudományos kutatás vásárlása', 'link' => '/actions/buy_research.php'];
-} else {
-    $actions[] = ['label' => 'Épület vásárlás', 'link' => '/actions/buy_building.php'];
-    $actions[] = ['label' => 'Világkongresszus', 'link' => '/actions/un.php'];
-    $actions[] = ['label' => 'Háború indítása', 'link' => '/actions/declare_war.php'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['discovery_action']) && isset($_POST['team_id'])) {
+    $team_id = trim($_POST['team_id']);
+    // kutatasi adatok
+    $stmt = mysqli_prepare($connection, "SELECT kutatasi_pontok, research_era, research_found, winner FROM csapatok WHERE id = ?");
+    mysqli_stmt_bind_param($stmt, "s", $team_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $research_points, $research_era, $research_found, $winner);
+    if (!mysqli_stmt_fetch($stmt)) {
+        $error = "Csapat nem található.";
+    }
+    mysqli_stmt_close($stmt);
+    
+    // korszakok
+    $era_requirements = [
+        1 => 11,
+        2 => 8,
+        3 => 7,
+        4 => 9,
+        5 => 8,
+        6 => 7
+    ];
+    
+    $action = $_POST['discovery_action'];
+    
+    if ($research_era < 6 || ($research_era == 6 && $research_found < $era_requirements[6])) {
+        // 5-ös szorzo minden korszaknál
+        $cost = $research_era * 5;
+        if ($action === 'plus') {
+            if ($research_points >= $cost) {
+                $research_points -= $cost;
+                $research_found++;
+
+                // kövi korszakra menjen el van érve
+                if ($research_found >= $era_requirements[$research_era]) {
+                    if ($research_era < 6) {
+                        $research_era++;
+                        $research_found = 0;
+                    }
+                }
+            } else {
+                $error = "Nincs elég kutatási pont!";
+            }
+        } elseif ($action === 'minus') {
+            if ($research_found > 0) {
+                $research_found--;
+                $research_points += $cost;
+            }
+        }
+    } else {
+        // vegso fazis req
+        $final_cost = 50;
+        if ($action === 'final_plus') {
+            if ($research_points >= $final_cost) {
+                $research_points -= $final_cost;
+                $winner = 1;
+            } else {
+                $error = "Nincs elég kutatási pont!";
+            }
+        }
+    }
+    
+    // update ha van eleg pont
+    if (!isset($error)) {
+        $stmt = mysqli_prepare($connection, "UPDATE csapatok SET kutatasi_pontok = ?, research_era = ?, research_found = ?, winner = ? WHERE id = ?");
+        mysqli_stmt_bind_param($stmt, "iiiss", $research_points, $research_era, $research_found, $winner, $team_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+        header("Location: /manage-game?uuid=" . urlencode($team_id));
+        exit;
+    }
 }
+
+$current_round = get_current_round($connection) + 1;
+$final_stage_reached = 0;
 ?>
 <link rel="stylesheet" href="/public/static/css/pages/manage.css">
 
-<div class="gameplay-header">
+<div class="container">
     <h1>Játék Menedzsment</h1>
-    <p>Jelenlegi kör: <?php echo htmlspecialchars($current_round + 1, ENT_QUOTES, 'UTF-8'); ?></p>
+    <p>Jelenlegi kör: <?php echo htmlspecialchars($current_round, ENT_QUOTES, 'UTF-8'); ?></p>
     <?php if (isset($error)) : ?>
         <div class="toast error"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
     <?php endif; ?>
 </div>
+
+<section class="round-actions">
+    <form action="/manage-game" method="post" style="display:inline;">
+        <input type="hidden" name="next_round" value="1">
+        <button type="submit">Következő kör</button>
+    </form>
+</section>
 
 <nav class="teams-nav">
     <ul>
@@ -57,44 +131,11 @@ if ($current_round % 2 === 1) {
             mysqli_free_result($result);
         }
         ?>
-        <button onclick="popup('add-team')"><img class="icon" src="/public/static/icons/plus.svg">Új csapat</button>
     </ul>
 </nav>
 
-<section class="gameplay-actions">
-    <?php foreach ($actions as $action): ?>
-        <button onclick="location.href='<?php echo htmlspecialchars($action['link'], ENT_QUOTES, 'UTF-8'); ?>'">
-            <?php echo htmlspecialchars($action['label'], ENT_QUOTES, 'UTF-8'); ?>
-        </button>
-    <?php endforeach; ?>
-    <form action="/manage-game" method="post" style="display:inline;">
-        <input type="hidden" name="end_round" value="1">
-        <button type="submit">Kör lezárása</button>
-    </form>
-</section>
-
-<section class="teams-status">
-    <h2>Csapatok állapota</h2>
-    <?php
-    $query = "SELECT * FROM csapatok ORDER BY letrehozva";
-    $result = mysqli_query($connection, $query);
-    if (!$result) {
-        echo "<p>Hiba a csapatok lekérdezésével: " . mysqli_error($connection) . "</p>";
-    } else {
-        echo "<ul>";
-        while ($team = mysqli_fetch_assoc($result)) {
-            echo "<li>" . htmlspecialchars($team['nev'], ENT_QUOTES, 'UTF-8') .
-                 " - Bevétel: " . htmlspecialchars($team['bevetel'], ENT_QUOTES, 'UTF-8') .
-                 " - Termelés: " . htmlspecialchars($team['termeles'], ENT_QUOTES, 'UTF-8') .
-                 " - Kutatási pontok: " . htmlspecialchars($team['kutatasi_pontok'], ENT_QUOTES, 'UTF-8') .
-                 "</li>";
-        }
-        echo "</ul>";
-    }
-    ?>
-</section>
-
 <?php
+// get team data
 if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
     $uuid = trim($_GET['uuid']);
     if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid)) {
@@ -112,106 +153,86 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
 }
 if (isset($team)) :
 ?>
-
-
-<!-- NEM MUKODIK MEG !!!! -->
     <div class="container">
         <div class="container-header">
-            <h1><span><?php echo htmlspecialchars($team['nev'], ENT_QUOTES, 'UTF-8'); ?></span> részletes adatai</h1>
-            <?php
-                $onclick = "removePopup(" . json_encode($team['id'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-                         . ", " . json_encode($team['nev'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ")";
-            ?>
-            <button onclick="<?php echo htmlspecialchars($onclick, ENT_QUOTES, 'UTF-8'); ?>">Csapat törlése</button>
+            <h1 style="font-size:20px;">
+                <span><?php echo htmlspecialchars($team['nev'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <?php
+                if ($current_round % 2 == 1) {
+                    echo " tudományos felfedezései";
+                    echo "<p style='margin-top:6px;font-size:18px;'>Kutatási pontok: <b style='font-weight:bold;font-size:24px;'>" . htmlspecialchars($team['kutatasi_pontok'], ENT_QUOTES, 'UTF-8') . "</b></p>";
+                } else {
+                    echo "<b style='color:#1c85db'>Tőzsde, ENSZ, Szövetség, Háború</b>";
+                }
+                ?>
+            </h1>
         </div>
         <form class="init-form" action="/manage-game?uuid=<?php echo urlencode($team['id']); ?>" method="post">
             <input type="hidden" name="team_id" value="<?php echo htmlspecialchars($team['id'], ENT_QUOTES, 'UTF-8'); ?>">
-            <div class="card-container">
-                <div class="card team-info-card">
-                    <h2>Csapat Infók</h2>
-                    <div class="field-group">
-                        <label>Csapatnév</label>
-                        <div class="static-field"><?php echo htmlspecialchars($team['nev'], ENT_QUOTES, 'UTF-8'); ?></div>
-                    </div>
-                    <div class="field-group">
-                        <label for="allamforma">Államforma</label>
-                        <select id="allamforma" name="allamforma">
-                            <option value="demokratikus" <?php echo ($team['allamforma'] === 'demokratikus') ? 'selected' : ''; ?>>Demokratikus</option>
-                            <option value="test" <?php echo ($team['allamforma'] === 'test') ? 'selected' : ''; ?>>test</option>
-                        </select>
-                    </div>
-                    <div class="field-group">
-                        <label for="kontinens">Kontinens</label>
-                        <input type="text" id="kontinens" name="kontinens" value="<?php echo htmlspecialchars($team['kontinens'], ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
+            <?php if ($current_round % 2 == 1) : ?>
+                <div class="felfedezesek-container">
+                    <?php
+                    $era_requirements = [
+                        1 => 11,
+                        2 => 8,
+                        3 => 7,
+                        4 => 9,
+                        5 => 8,
+                        6 => 7
+                    ];
+                    $current_team_era = isset($team['research_era']) ? (int)$team['research_era'] : 1;
+                    $current_team_found = isset($team['research_found']) ? (int)$team['research_found'] : 0;
+                    ?>
+                    <?php
+
+                    // végső felfedezés - holdra jutás
+                    if ($current_team_era == 6 && $current_team_found >= $era_requirements[6]) {
+                        $final_stage_reached = 1;
+                        $final_cost = 50;
+                        $winner = isset($team['winner']) ? (int)$team['winner'] : 0;
+                        ?>
+                        <div class="korszak final-stage">
+                            <?php if ($winner): ?>
+                                <h1>Nyertél!</h1>
+                            <?php else: ?>
+                                <b>Juss el a Holdra!</b>
+                                <p>Költség: <?php echo htmlspecialchars($final_cost, ENT_QUOTES, 'UTF-8'); ?> pont</p>
+                                <div class="korszak-btns">
+                                    <button type="submit" name="discovery_action" value="final_plus">OK</button>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php
+                    }
+                    ?>
+                    <?php if (!$final_stage_reached): ?>
+                        <?php for ($era = 1; $era <= 6; $era++): ?>
+                            <div class="korszak">
+                                <?php if ($era < $current_team_era): ?>
+                                    <!-- ami fel van oldva -->
+                                    <h1><?php echo htmlspecialchars($era_requirements[$era], ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars($era_requirements[$era], ENT_QUOTES, 'UTF-8'); ?></h1>
+                                    <p>Feloldva</p>
+                                <?php elseif ($era == $current_team_era): ?>
+                                    <!-- jelenlegi korszak -->
+                                    <?php $cost = $era * 5; ?>
+                                    <h1><?php echo htmlspecialchars($current_team_found, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars($era_requirements[$era], ENT_QUOTES, 'UTF-8'); ?></h1>
+                                    <p>Költség: <?php echo htmlspecialchars($cost, ENT_QUOTES, 'UTF-8'); ?> pont</p>
+                                    <div class="korszak-btns">
+                                        <button type="submit" name="discovery_action" value="minus">-</button>
+                                        <button type="submit" name="discovery_action" value="plus">+</button>
+                                    </div>
+                                <?php else: ?>
+                                    <p>Nincs feloldva</p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endfor; ?>
+                    <?php endif; ?>
                 </div>
-                <div class="card stats-card">
-                    <h2>Erőforrások</h2>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="bevetel">Bevétel</label>
-                            <input type="number" id="bevetel" name="bevetel" value="<?php echo htmlspecialchars($team['bevetel'], ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label for="termeles">Termelés</label>
-                            <input type="number" id="termeles" name="termeles" value="<?php echo htmlspecialchars($team['termeles'], ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="kutatasi_pontok">Kutatási pontok</label>
-                            <input type="number" id="kutatasi_pontok" name="kutatasi_pontok" value="<?php echo htmlspecialchars($team['kutatasi_pontok'], ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label for="diplomaciai_pontok">Diplomáciai pontok</label>
-                            <input type="number" id="diplomaciai_pontok" name="diplomaciai_pontok" value="<?php echo htmlspecialchars($team['diplomaciai_pontok'], ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="katonai_pontok">Katonai pontok</label>
-                            <input type="number" id="katonai_pontok" name="katonai_pontok" value="<?php echo htmlspecialchars($team['katonai_pontok'], ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                    </div>
-                </div>
-                <div class="card institutions-card">
-                    <h2>Épületek</h2>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="bankok">Bankok</label>
-                            <input type="number" id="bankok" name="bankok" value="<?php echo htmlspecialchars($team['bankok'], ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label for="gyarak">Gyárak</label>
-                            <input type="number" id="gyarak" name="gyarak" value="<?php echo htmlspecialchars($team['gyarak'], ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="egyetemek">Egyetemek</label>
-                            <input type="number" id="egyetemek" name="egyetemek" value="<?php echo htmlspecialchars($team['egyetemek'], ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label for="laktanyak">Laktanyak</label>
-                            <input type="number" id="laktanyak" name="laktanyak" value="<?php echo htmlspecialchars($team['laktanyak'], ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                    </div>
-                    <hr style="border:none; border-top:1px solid black;">
-                    <div class="field-group">
-                        <label for="politikak-select">Politikák</label>
-                        <div class="chips-container" id="chips-container"></div>
-                        <select id="politikak-select">
-                            <option value="" disabled selected>Válassz politikát</option>
-                            <option value="option1">Option 1</option>
-                            <option value="option2">Option 2</option>
-                            <option value="option3">Option 3</option>
-                            <option value="option4">Option 4</option>
-                        </select>
-                        <input type="hidden" name="politikak" id="politikak-hidden" value="<?php echo htmlspecialchars($team['politikak'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                </div>
-            </div>
-            <input type="submit" class="submit-btn" name="kezdo_megerosites" value="Kezdő adatok megerősítése">
+            <?php else: ?>
+                <!-- paros -->
+                <div>meg nincs kesz</div>
+                <input type="submit" class="submit-btn" name="megerosites" value="Megerősítés">
+            <?php endif; ?>
         </form>
     </div>
 <?php endif; ?>

@@ -1,0 +1,76 @@
+/* 
+====================
+
+PÁRATLAN - KUTATÁS / FELFEDEZÉSEK 
+
+====================
+*/
+
+.felfedezesek-container {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    width: 100%;
+    gap: 20px;
+}
+
+.korszak {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    aspect-ratio: 1/1;
+    align-items: center;
+    border: 1px solid gray;
+    background-color: rgb(255, 226, 172);
+    gap: 10px;
+}
+
+.korszak.final-stage {
+    background-color: rgb(207, 219, 219);
+    border-radius: 100%;
+}
+
+.korszak.final-stage .korszak-btns {
+    justify-content: center;
+}
+
+.korszak.final-stage button {
+    background-color: black;
+    padding-inline: 10px;
+    width: min-content;
+    border-radius: 4px;
+}
+
+.korszak input {
+    padding: 10px;
+    max-width: 90px;
+    font-size: 24px;
+}
+
+.korszak-btns {
+    display: flex;
+    margin-bottom: -30px;
+    width: 100%;
+    padding-inline: 20px;
+    gap: 8px;
+}
+
+.korszak-btns button {
+    width: 100%;
+    padding: 6px;
+    color: white;
+    font-size: 24px;
+    border: 1px solid black;
+}
+
+.korszak-btns button[value=minus] {
+    background-color: var(--darkred);
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.korszak-btns button[value=plus] {
+    background-color: var(--darkgreen);
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}

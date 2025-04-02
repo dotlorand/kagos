@@ -267,6 +267,18 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
                         <label for="kontinens">Kontinens</label>
                         <input type="text" id="kontinens" name="kontinens" value="<?php echo htmlspecialchars($team['kontinens'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
+                    <div class="field-group">
+                        <label for="politikak-select">Politikák</label>
+                        <div class="chips-container" id="chips-container"></div>
+                        <select id="politikak-select">
+                            <option value="" disabled selected>Válassz politikát</option>
+                            <option value="option1">Option 1</option>
+                            <option value="option2">Option 2</option>
+                            <option value="option3">Option 3</option>
+                            <option value="option4">Option 4</option>
+                        </select>
+                        <input type="hidden" name="politikak" id="politikak-hidden" value="<?php echo htmlspecialchars($team['politikak'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                    </div>
                 </div>
                 <div class="card stats-card">
                     <h2>Erőforrások</h2>
@@ -280,57 +292,36 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
                             <input type="number" id="termeles" name="termeles" value="<?php echo htmlspecialchars($team['termeles'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
                     </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="kutatasi_pontok">Kutatási pontok</label>
-                            <input type="number" id="kutatasi_pontok" name="kutatasi_pontok" value="<?php echo htmlspecialchars($team['kutatasi_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label for="diplomaciai_pontok">Diplomáciai pontok</label>
-                            <input type="number" id="diplomaciai_pontok" name="diplomaciai_pontok" value="<?php echo htmlspecialchars($team['diplomaciai_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
+                    <div class="field-group">
+                        <label for="kutatasi_pontok">Kutatási pontok</label>
+                        <input type="number" id="kutatasi_pontok" name="kutatasi_pontok" value="<?php echo htmlspecialchars($team['kutatasi_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="katonai_pontok">Katonai pontok</label>
-                            <input type="number" id="katonai_pontok" name="katonai_pontok" value="<?php echo htmlspecialchars($team['katonai_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
+                    <div class="field-group">
+                        <label for="diplomaciai_pontok">Diplomáciai pontok</label>
+                        <input type="number" id="diplomaciai_pontok" name="diplomaciai_pontok" value="<?php echo htmlspecialchars($team['diplomaciai_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+                    </div>
+                    <div class="field-group">
+                        <label for="katonai_pontok">Katonai pontok</label>
+                        <input type="number" id="katonai_pontok" name="katonai_pontok" value="<?php echo htmlspecialchars($team['katonai_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                 </div>
                 <div class="card institutions-card">
                     <h2>Épületek</h2>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="bankok">Bankok</label>
-                            <input type="number" id="bankok" name="bankok" value="<?php echo htmlspecialchars($team['bankok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label for="gyarak">Gyárak</label>
-                            <input type="number" id="gyarak" name="gyarak" value="<?php echo htmlspecialchars($team['gyarak'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="egyetemek">Egyetemek</label>
-                            <input type="number" id="egyetemek" name="egyetemek" value="<?php echo htmlspecialchars($team['egyetemek'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label for="laktanyak">Laktanyak</label>
-                            <input type="number" id="laktanyak" name="laktanyak" value="<?php echo htmlspecialchars($team['laktanyak'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                    </div>
-                    <hr style="border:none; border-top:1px solid black;">
                     <div class="field-group">
-                        <label for="politikak-select">Politikák</label>
-                        <div class="chips-container" id="chips-container"></div>
-                        <select id="politikak-select">
-                            <option value="" disabled selected>Válassz politikát</option>
-                            <option value="option1">Option 1</option>
-                            <option value="option2">Option 2</option>
-                            <option value="option3">Option 3</option>
-                            <option value="option4">Option 4</option>
-                        </select>
-                        <input type="hidden" name="politikak" id="politikak-hidden" value="<?php echo htmlspecialchars($team['politikak'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                        <label for="bankok">Bankok</label>
+                        <input type="number" id="bankok" name="bankok" value="<?php echo htmlspecialchars($team['bankok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+                    </div>
+                    <div class="field-group">
+                        <label for="gyarak">Gyárak</label>
+                        <input type="number" id="gyarak" name="gyarak" value="<?php echo htmlspecialchars($team['gyarak'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+                    </div>
+                    <div class="field-group">
+                        <label for="egyetemek">Egyetemek</label>
+                        <input type="number" id="egyetemek" name="egyetemek" value="<?php echo htmlspecialchars($team['egyetemek'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+                    </div>
+                    <div class="field-group">
+                        <label for="laktanyak">Laktanyak</label>
+                        <input type="number" id="laktanyak" name="laktanyak" value="<?php echo htmlspecialchars($team['laktanyak'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                 </div>
             </div>
