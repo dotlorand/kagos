@@ -15,7 +15,8 @@
     <span>dev nav</span>
     <a href="/">[leaderboard]</a>
     <a href="/init">[init]</a>
-    <a href="/manage-game">[manage]</a>
+    <a href="/round">[rounds]</a>
+    <a href="/management">[management]</a>
 </nav>
 
 <main>

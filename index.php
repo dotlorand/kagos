@@ -18,8 +18,24 @@ switch ($request) {
         require __DIR__ . '/backend/source/pages/init.php';
         break;
 
-    case 'manage-game':
-        require __DIR__ . '/backend/source/pages/manage_game.php';
+    case 'round':
+        require __DIR__ . '/backend/source/pages/round.php';
+        break;
+
+    case 'ensz':
+        require __DIR__ . '/backend/source/pages/ensz.php';
+        break;
+
+    case 'management':
+        require __DIR__ . '/backend/source/pages/management.php';
+        break;
+    
+    case 'szovetsegek':
+        require __DIR__ . '/backend/source/pages/szovetseg.php';
+        break;
+
+    case 'haboruk':
+        require __DIR__ . '/backend/source/pages/haboruk.php';
         break;
 
     default:

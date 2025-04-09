@@ -5,7 +5,6 @@
  * 
  */
 
- // bug fix
 function ensure_jatek_row($connection) {
     $query = "SELECT id FROM jatekok LIMIT 1";
     $result = mysqli_query($connection, $query);
@@ -142,27 +141,96 @@ $game_update_rules = [
 
 function process_game_round($connection) {
     global $game_update_rules;
+
     $current_round = get_current_round($connection);
     $new_round = $current_round + 1;
-    
-    // new round
+
+    // Increment round.
     if (!update_current_round($connection, $new_round)) {
         return false;
     }
-    
-    $query = "SELECT * FROM csapatok";
-    $result = mysqli_query($connection, $query);
-    if (!$result) {
+
+    // Retrieve all custom recurring rules.
+    $custom_rules_query = "SELECT team_id, field, amount FROM custom_rules";
+    $custom_rules_result = mysqli_query($connection, $custom_rules_query);
+
+    $custom_rules = [];
+    if ($custom_rules_result) {
+        while ($rule = mysqli_fetch_assoc($custom_rules_result)) {
+            $custom_rules[$rule['team_id']][] = $rule; // Group rules by team ID.
+        }
+        mysqli_free_result($custom_rules_result);
+    }
+
+    // Retrieve alliance counts: count teams per alliance (ignore empty alliances).
+    $alliance_counts = [];
+    $alliance_query = "SELECT alliance, COUNT(*) AS count FROM csapatok WHERE alliance <> '' GROUP BY alliance";
+    $result_alliance = mysqli_query($connection, $alliance_query);
+    if ($result_alliance) {
+        while ($row = mysqli_fetch_assoc($result_alliance)) {
+            $alliance_counts[$row['alliance']] = (int)$row['count'];
+        }
+        mysqli_free_result($result_alliance);
+    }
+
+    // Retrieve all teams.
+    $team_query = "SELECT * FROM csapatok";
+    $team_result = mysqli_query($connection, $team_query);
+
+    if (!$team_result) {
         return false;
     }
-    
-    while ($team = mysqli_fetch_assoc($result)) {
+
+    // Define the extra politikák mapping.
+    // Keys are the politikák values (as stored in the hidden JSON "value" property)
+    // and the inner associative array keys are the team stats to adjust.
+    $politics_mapping = [
+        'totemizmus'       => ['termeles' => 1],
+        'zikkurat'         => ['kutatasi_pontok' => 1],
+        'nomad'            => ['katonai_pontok' => 1],
+        'torzsi_szovetseg' => ['diplomaciai_pontok' => 1],
+        'monoteizmus'      => ['kutatasi_pontok' => 1, 'diplomaciai_pontok' => 1, 'termeles' => -1],
+        'politeizmus'      => ['kutatasi_pontok' => 1, 'termeles' => 1, 'diplomaciai_pontok' => -1],
+        'xii_tabla'        => ['termeles' => 1],
+        'pantheon'         => ['kutatasi_pontok' => 1],
+        'nepgyules'        => ['diplomaciai_pontok' => 1],
+        'legio'            => ['katonai_pontok' => 1],
+        'akropolisz'       => ['kutatasi_pontok' => 1],
+        'strategosz'       => ['katonai_pontok' => 1],
+        'deloszi_szovetseg'=> ['diplomaciai_pontok' => 1],
+        'ezustbany'        => ['termeles' => 1],
+        'karavella'        => ['termeles' => 1],
+        'monopolium'       => ['diplomaciai_pontok' => 1],
+        'keresztes'        => ['katonai_pontok' => 1],
+        'obszervatori'     => ['kutatasi_pontok' => 1],
+        'inkvizicio'       => ['katonai_pontok' => 1, 'termeles' => 1, 'kutatasi_pontok' => -2],
+        'gyarmatositas'    => ['kutatasi_pontok' => 1, 'diplomaciai_pontok' => 1, 'termeles' => -2],
+        'kapitalizmus'     => ['termeles' => 1],
+        'vilagbank'        => ['diplomaciai_pontok' => 1],
+        'erasmus'          => ['kutatasi_pontok' => 1],
+        'nemzeti_hadsereg' => ['katonai_pontok' => 1],
+        'new_deal'         => ['termeles' => 1, 'diplomaciai_pontok' => 1, 'kutatasi_pontok' => -2],
+        'schengeni'        => ['kutatasi_pontok' => 1, 'termeles' => 1, 'katonai_pontok' => -2],
+        'emberi_jogok'     => ['kutatasi_pontok' => 1, 'diplomaciai_pontok' => 1, 'termeles' => -2],
+        'nato'             => ['katonai_pontok' => 1, 'diplomaciai_pontok' => 1, 'kutatasi_pontok' => -2],
+        'munkaverseny'     => ['termeles' => 1],
+        'kgst'             => ['diplomaciai_pontok' => 1],
+        'varsoi'           => ['katonai_pontok' => 1],
+        'komintern'        => ['kutatasi_pontok' => 1],
+        'gulag'            => ['termeles' => 1, 'kutatasi_pontok' => 1, 'diplomaciai_pontok' => -2],
+        'allamrendor'      => ['katonai_pontok' => 1, 'kutatasi_pontok' => -2],
+        'atomfegyver'      => ['katonai_pontok' => 1, 'kutatasi_pontok' => 1],
+        'propaganda'       => ['termeles' => 1, 'diplomaciai_pontok' => 1, 'kutatasi_pontok' => -2]
+    ];
+
+    while ($team = mysqli_fetch_assoc($team_result)) {
         $team_id = $team['id'];
         $updated_team = $team;
         $updates = [];
         $params = [];
         $param_types = "";
-        
+
+        // Apply default game rules.
         foreach ($game_update_rules as $rule) {
             $target = $rule['target'];
             $increment = $rule['calculate']($team);
@@ -172,53 +240,96 @@ function process_game_round($connection) {
             $params[] = $updated_team[$target];
             $param_types .= "i";
         }
+
+        // Apply custom recurring rules for the current team.
+        if (isset($custom_rules[$team_id])) {
+            foreach ($custom_rules[$team_id] as $rule) {
+                $field = $rule['field'];
+                $amount = (int)$rule['amount'];
+                if (isset($updated_team[$field])) {
+                    $updated_team[$field] += $amount;
+                    $index = array_search("$field = ?", $updates);
+                    if ($index !== false) {
+                        $params[$index] = $updated_team[$field];
+                    } else {
+                        $updates[] = "$field = ?";
+                        $params[] = $updated_team[$field];
+                        $param_types .= "i";
+                    }
+                }
+            }
+        }
+
+        // *** Extra Politikák Bonus Block ***
+        if (!empty($team['politikak'])) {
+            $decoded_politics = json_decode($team['politikak'], true);
+            if (is_array($decoded_politics)) {
+                foreach ($decoded_politics as $chip) {
+                    if (isset($chip['value']) && isset($politics_mapping[$chip['value']])) {
+                        foreach ($politics_mapping[$chip['value']] as $stat => $delta) {
+                            if (isset($updated_team[$stat])) {
+                                $updated_team[$stat] += $delta;
+                            }
+                        }
+                    }
+                }
+                // For each affected field, update our parameter array so it reflects the new values.
+                $fields_to_update = ['termeles', 'kutatasi_pontok', 'diplomaciai_pontok', 'katonai_pontok'];
+                foreach ($fields_to_update as $field) {
+                    $index = array_search("$field = ?", $updates);
+                    if ($index !== false) {
+                        $params[$index] = $updated_team[$field];
+                    }
+                }
+            }
+        }
+        // *** End Extra Politikák Bonus Block ***
+
+        // *** Alliance Bonus Block ***
+        if (!empty($team['alliance']) && isset($alliance_counts[$team['alliance']]) && $alliance_counts[$team['alliance']] >= 2) {
+            $updated_team['diplomaciai_pontok'] += 1;
+            $dipl_index = array_search("diplomaciai_pontok = ?", $updates);
+            if ($dipl_index !== false) {
+                $params[$dipl_index] = $updated_team['diplomaciai_pontok'];
+            } else {
+                $updates[] = "diplomaciai_pontok = ?";
+                $params[] = $updated_team['diplomaciai_pontok'];
+                $param_types .= "i";
+            }
+        }
         
+        // *** Clamp resource values so none fall below zero ***
+        $resource_fields = ['bevetel','termeles','kutatasi_pontok','diplomaciai_pontok','katonai_pontok','bankok','gyarak','egyetemek','laktanyak'];
+        foreach ($resource_fields as $field) {
+            $updated_team[$field] = max(0, $updated_team[$field]);  // enforce non-negative
+            $index = array_search("$field = ?", $updates);
+            if ($index !== false) {
+                $params[$index] = $updated_team[$field];
+            }
+        }
+        // *** End clamping ***
+
+        // Build and execute the team update query.
         $update_query = "UPDATE csapatok SET " . implode(", ", $updates) . " WHERE id = ?";
         $params[] = $team_id;
         $param_types .= "s";
+
         $stmt = mysqli_prepare($connection, $update_query);
-        if (!$stmt) {
-            continue;
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, $param_types, ...$params);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
         }
-        mysqli_stmt_bind_param($stmt, $param_types, ...$params);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_close($stmt);
-        
+
+        // Log the updated team data into history.
         log_team_history($connection, $new_round, $updated_team);
     }
+
+    
+    mysqli_free_result($team_result);
     
     return true;
 }
 
-// idk
-function process_purchase($connection, $team_id, $field, $cost) {
-    $query = "SELECT $field FROM csapatok WHERE id = ?";
-    $stmt = mysqli_prepare($connection, $query);
-    if (!$stmt) {
-        return false;
-    }
-    mysqli_stmt_bind_param($stmt, "s", $team_id);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $current_value);
-    if (!mysqli_stmt_fetch($stmt)) {
-        mysqli_stmt_close($stmt);
-        return false;
-    }
-    mysqli_stmt_close($stmt);
-    
-    if ($current_value < $cost) {
-        return false;
-    }
-    
-    $new_value = $current_value - $cost;
-    $update_query = "UPDATE csapatok SET $field = ? WHERE id = ?";
-    $stmt = mysqli_prepare($connection, $update_query);
-    if (!$stmt) {
-        return false;
-    }
-    mysqli_stmt_bind_param($stmt, "is", $new_value, $team_id);
-    $result = mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
-    return $result;
-}
+
 ?>

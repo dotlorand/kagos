@@ -2,59 +2,62 @@
 include(__DIR__ . '/../components/head.php');
 include_once(__DIR__ . '/../logic/game_backend.php');
 
-if (get_game_phase($connection) === 'active') {
-    header("Location: /round");
+// Ensure the game is active.
+if (get_game_phase($connection) !== 'active') {
+    header("Location: /init");
     exit;
 }
 
-// add team
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['add_team'])) {
-    $nev        = trim($_POST['nev'] ?? '');
-    $allamforma = trim($_POST['allamforma'] ?? '');
-    $kontinens  = trim($_POST['kontinens'] ?? '');
-    // Updated allowed államforma values
-    $valid_allamforma = ['törzsi', 'arisztokratikus', 'türannisz', 'kalmár', 'modern', 'kommunista'];
-    if ($nev === '' || $allamforma === '' || $kontinens === '') {
-        $error = "Minden mezőt ki kell tölteni!";
-    } elseif (!in_array($allamforma, $valid_allamforma)) {
-        $error = "Érvénytelen államforma.";
-    } else {
-        $stmt = mysqli_prepare($connection, "INSERT INTO csapatok (nev, allamforma, kontinens) VALUES (?, ?, ?)");
-        if (!$stmt) {
-            $error = "Hiba a lekérdezéssel: " . mysqli_error($connection);
-        } else {
-            mysqli_stmt_bind_param($stmt, "sss", $nev, $allamforma, $kontinens);
+// ===========================
+// Process Recurring Custom Rule Removal
+// ===========================
+if (isset($_POST['remove_rule'])) {
+    $rule_id = trim($_POST['rule_id'] ?? '');
+    if (!empty($rule_id)) {
+        $stmt = mysqli_prepare($connection, "DELETE FROM custom_rules WHERE id = ?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "i", $rule_id);
             if (mysqli_stmt_execute($stmt)) {
-                $success = "Csapat hozzáadva!";
+                $success_custom = "Szabály törölve.";
             } else {
-                $error = "Hiba: " . mysqli_stmt_error($stmt);
+                $error_custom = "Hiba a szabály törlésekor: " . mysqli_stmt_error($stmt);
+            }
+            mysqli_stmt_close($stmt);
+        } else {
+            $error_custom = "Hiba a törlési lekérdezés előkészítésénél: " . mysqli_error($connection);
+        }
+    }
+}
+
+// ===========================
+// Process Recurring Custom Rule Submission
+// ===========================
+if (isset($_POST['save_recurring_rule'])) {
+    $rule_team = trim($_POST['rule_team'] ?? '');
+    $rule_field = trim($_POST['rule_field'] ?? '');
+    $rule_amount = (int)($_POST['rule_amount'] ?? 0);
+
+    if (empty($rule_team) || empty($rule_field)) {
+        $error_custom = "Minden mezőt ki kell tölteni a szabály létrehozásához!";
+    } else {
+        $stmt = mysqli_prepare($connection, "INSERT INTO custom_rules (team_id, field, amount) VALUES (?, ?, ?)");
+        if (!$stmt) {
+            $error_custom = "Hiba a lekérdezés előkészítésénél: " . mysqli_error($connection);
+        } else {
+            mysqli_stmt_bind_param($stmt, "ssi", $rule_team, $rule_field, $rule_amount);
+            if (mysqli_stmt_execute($stmt)) {
+                $success_custom = "Recurring rule saved.";
+            } else {
+                $error_custom = "Hiba a szabály mentésekor: " . mysqli_stmt_error($stmt);
             }
             mysqli_stmt_close($stmt);
         }
     }
 }
 
-// del team
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['remove_team'])) {
-    $team_id = trim($_POST['team_id'] ?? '');
-    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $team_id)) {
-        $error = "Érvénytelen csapat azonosító.";
-    } else {
-        $stmt = mysqli_prepare($connection, "DELETE FROM csapatok WHERE id = ?");
-        if (!$stmt) {
-            $error = "Hiba a törlési lekérdezés előkészítésénél: " . mysqli_error($connection);
-        } else {
-            mysqli_stmt_bind_param($stmt, "s", $team_id);
-            if (mysqli_stmt_execute($stmt)) {
-                $success = "Csapat törölve!";
-            } else {
-                $error = "Hiba a csapat törlésekor: " . mysqli_stmt_error($stmt);
-            }
-            mysqli_stmt_close($stmt);
-        }
-    }
-}
-
+// ===========================
+// Process Team Update
+// ===========================
 // update team
 if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
     $team_id = trim($_POST['team_id'] ?? '');
@@ -154,7 +157,7 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
                             $team_id
                         );
                         if (mysqli_stmt_execute($stmt)) {
-                            header("Location: /init?uuid=" . urlencode($team_id));
+                            header("Location: /management?uuid=" . urlencode($team_id));
                             exit;
                         } else {
                             $error = "Hiba az adatok frissítésekor: " . mysqli_stmt_error($stmt);
@@ -168,25 +171,27 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
 }
 
 
-// start game
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['start_game'])) {
-    $query = "SELECT COUNT(*) AS team_count FROM csapatok";
-    $result = mysqli_query($connection, $query);
-    $row = mysqli_fetch_assoc($result);
-    if ((int)$row['team_count'] === 0) {
-        $error = "Nincs csapat hozzáadva!";
-    } else {
-        if (start_game_now($connection)) {
-            header("Location: /round");
-            exit;
-        } else {
-            $error = "Hiba a játék elindításakor!";
-        }
+// ===========================
+// Retrieve All Teams (by ID and Name)
+// ===========================
+$teams = [];
+$team_names = [];
+$query = "SELECT id, nev, diplomaciai_pontok FROM csapatok ORDER BY letrehozva";
+$result = mysqli_query($connection, $query);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $teams[] = $row;
+        $team_names[$row['id']] = $row['nev'];
     }
+    mysqli_free_result($result);
+} else {
+    $error = "Hiba a csapatok lekérdezésében: " . mysqli_error($connection);
 }
 
-// get team data
-if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
+// ===========================
+// Retrieve Team Data if Selected via "uuid"
+// ===========================
+if (isset($_GET['uuid']) && !empty($_GET['uuid'])) {
     $uuid = trim($_GET['uuid']);
     if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid)) {
         $error = "Érvénytelen azonosító formátum.";
@@ -208,36 +213,20 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
     }
 }
 ?>
-
-<style>
-    .popup-container > div { display: none; }
-</style>
 <link rel="stylesheet" href="/public/static/css/pages/manage.css">
 
+<!-- Navigation: List of Teams -->
 <nav class="teams-nav">
     <ul>
         <?php
-        $query = "SELECT id, nev FROM csapatok ORDER BY letrehozva";
-        $result = mysqli_query($connection, $query);
-        if (!$result) {
-            error_log("db query failed: " . mysqli_error($connection));
-            $error = "Hiba a csapatok lekérdezésével.";
-            exit;
-        }
-        while ($nav_team = mysqli_fetch_assoc($result)) {
+        foreach ($teams as $nav_team) {
             $team_id_html = htmlspecialchars($nav_team['id'], ENT_QUOTES, 'UTF-8');
             $team_name_html = htmlspecialchars($nav_team['nev'], ENT_QUOTES, 'UTF-8');
             $active_class = (isset($team) && $team['id'] === $nav_team['id']) ? 'active' : '';
-            echo "<li><a href='/init?uuid=" . urlencode($team_id_html) . "' class='{$active_class}'>{$team_name_html}</a></li>";
+            echo "<li><a href='/management?uuid=" . urlencode($team_id_html) . "' class='{$active_class}'>{$team_name_html}</a></li>";
         }
-        mysqli_free_result($result);
         ?>
-        <button onclick="popup('add-team')"><img class="icon" src="/public/static/icons/plus.svg">Új csapat</button>
     </ul>
-    <form action="" method="post">
-        <input type="hidden" name="start_game" value="1">
-        <button type="submit"><img class="icon" src="/public/static/icons/play.svg">Játék indítása</button>
-    </form>
 </nav>
 
 <?php if (isset($error)) : ?>
@@ -247,53 +236,13 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
     <div class="toast success"><?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></div>
 <?php endif; ?>
 
-<div id="popup-container">
-    <div class="popup-bg" onclick="closePopup()"></div>
-    <div class="popup-block" id="add-team">
-        <div class="popup-header">
-            <h2>Csapat hozzáadása</h2>
-            <button onclick="closePopup()"><img class="icon" src="/public/static/icons/close.svg" alt="Mégse" title="Mégse"></button>
-        </div>
-        <form action="/init" method="post">
-            <input required type="text" name="nev" autocomplete="off" placeholder="Csapat név" maxlength="30">
-            <select required name="allamforma">
-                <option value="" disabled selected>Válassz államformát</option>
-                <option value="törzsi">Törzsi</option>
-                <option value="arisztokratikus">Arisztokratikus</option>
-                <option value="türannisz">Türannisz</option>
-                <option value="kalmár">Kalmár</option>
-                <option value="modern">Modern</option>
-                <option value="kommunista">Kommunista</option>
-            </select>
-            <input required type="text" name="kontinens" autocomplete="off" placeholder="Kontinens" maxlength="30">
-            <input type="submit" name="add_team" value="Hozzáadás">
-        </form>
-    </div>
-    <div class="popup-block" id="remove-team">
-        <div class="popup-header">
-            <h2>Csapat törlése</h2>
-            <button onclick="closePopup()"><img class="icon" src="/public/static/icons/close.svg" alt="Mégse" title="Mégse"></button>
-        </div>
-        <form action="/init" method="post">
-            <p>Biztosan törlöd a <strong id="team-name-confirm"></strong> csapatot?</p>
-            <input type="hidden" name="team_id" value="">
-            <input type="submit" name="remove_team" value="Törlés">
-        </form>
-    </div>
-</div>
-
-
+<!-- Team Details Section -->
 <?php if (isset($team)) : ?>
     <div class="container">
         <div class="container-header">
-            <h1><span><?php echo htmlspecialchars($team['nev'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span> kezdő tőkéje</h1>
-            <?php
-                $onclick = "removePopup(" . json_encode($team['id'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-                         . ", " . json_encode($team['nev'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ")";
-            ?>
-            <button onclick="<?php echo htmlspecialchars($onclick, ENT_QUOTES, 'UTF-8'); ?>">Csapat törlése</button>
+            <h1><?php echo htmlspecialchars($team['nev'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h1>
         </div>
-        <form class="init-form" action="/init?uuid=<?php echo urlencode($team['id'] ?? ''); ?>" method="post">
+        <form class="init-form" action="/management?uuid=<?php echo urlencode($team['id'] ?? ''); ?>" method="post">
             <input type="hidden" name="team_id" value="<?php echo htmlspecialchars($team['id'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
             <div class="card-container">
                 <div class="card team-info-card">
@@ -436,6 +385,91 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
 <?php else: ?>
     <p class="notfound">Válassz ki csapatot</p>
 <?php endif; ?>
+
+<!-- Recurring Custom Rules Section -->
+<div class="custom-rules">
+    <h2>Recurring Custom Rules</h2>
+    <?php if (isset($error_custom)): ?>
+        <div class="toast error"><?php echo htmlspecialchars($error_custom, ENT_QUOTES, 'UTF-8'); ?></div>
+    <?php endif; ?>
+    <?php if (isset($success_custom)): ?>
+        <div class="toast success"><?php echo htmlspecialchars($success_custom, ENT_QUOTES, 'UTF-8'); ?></div>
+    <?php endif; ?>
+    <form action="/management" method="post">
+        <label for="rule_team">Csapat:</label>
+        <select id="rule_team" name="rule_team" required>
+            <option value="">-- Válassz --</option>
+            <?php foreach ($teams as $t): ?>
+                <option value="<?php echo htmlspecialchars($t['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php echo htmlspecialchars($t['nev'], ENT_QUOTES, 'UTF-8'); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <br>
+        <label for="rule_field">Mező:</label>
+        <select id="rule_field" name="rule_field" required>
+            <option value="">-- Válassz --</option>
+            <option value="bevetel">Bevétel</option>
+            <option value="termeles">Termelés</option>
+            <option value="kutatasi_pontok">Kutatási pontok</option>
+            <option value="diplomaciai_pontok">Diplomáciai pontok</option>
+            <option value="katonai_pontok">Katonai pontok</option>
+            <option value="bankok">Bankok</option>
+            <option value="gyarak">Gyárak</option>
+            <option value="egyetemek">Egyetemek</option>
+            <option value="laktanyak">Laktanyak</option>
+        </select>
+        <br>
+        <label for="rule_amount">Összeg (per round):</label>
+        <input type="number" id="rule_amount" name="rule_amount" value="0" required>
+        <br>
+        <input type="submit" name="save_recurring_rule" value="Szabály mentése">
+    </form>
+    
+    <!-- List existing recurring custom rules without creation date and with a remove button -->
+    <h3>Meglévő Recurring Rules</h3>
+    <?php
+    $custom_rules = [];
+    $query = "SELECT id, team_id, field, amount FROM custom_rules ORDER BY id DESC";
+    $result = mysqli_query($connection, $query);
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $custom_rules[] = $row;
+        }
+        mysqli_free_result($result);
+    }
+    if (!empty($custom_rules)):
+    ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>Csapat</th>
+                    <th>Mező</th>
+                    <th>Összeg (per round)</th>
+                    <th>Művelet</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($custom_rules as $rule): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($team_names[$rule['team_id']] ?? $rule['team_id'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars($rule['field'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars($rule['amount'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td>
+                            <form action="/management" method="post" onsubmit="return confirm('Biztosan törlöd ezt a szabályt?');" style="display:inline;">
+                                <input type="hidden" name="remove_rule" value="1">
+                                <input type="hidden" name="rule_id" value="<?php echo htmlspecialchars($rule['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <button type="submit">Törlés</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php else: ?>
+        <p>Nincs megadva recurring szabály.</p>
+    <?php endif; ?>
+</div>
 
 <script src="/public/static/js/manage.js"></script>
 <?php include(__DIR__ . '/../components/footer.html'); ?>

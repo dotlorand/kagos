@@ -1,3 +1,82 @@
+/* main */
+
+.round-actions {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding-block: 10px;
+}
+
+.next-round {
+    padding: 10px;
+    background-color: rgb(58, 58, 58);
+    color: white;
+    font-size: 1rem;
+    border: none;
+    border-radius: 100px;
+    padding-inline: 20px;
+}
+
+.round-actions ul {
+    display: flex;
+    gap: 12px;
+}
+
+.round-actions ul a {
+    padding: 10px;
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.round-actions ul a[href="/ensz"] {
+    background-color: rgb(84, 84, 170);
+    border-radius: 4px;
+    color: white;
+}
+
+.round-actions ul a[href="/szovetsegek"] {
+    background-color: rgb(170, 97, 170);
+    border-radius: 4px;
+    color: white;
+}
+
+.round-actions ul a[href="/haboruk"] {
+    background-color: rgb(143, 54, 54);
+    border-radius: 4px;
+    color: white;
+}
+
+/* both */
+
+.btns {
+    display: flex;
+    padding-inline: 20px;
+    gap: 8px;
+}
+
+.btns button {
+    width: 100%;
+    padding: 6px;
+    color: white;
+    font-size: 24px;
+    border: none;
+    padding-inline: 20px;
+}
+
+.btns button[value=minus] {
+    background-color: var(--darkred);
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.btns button[value=plus] {
+    background-color: var(--darkgreen);
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+
+
 /* 
 ====================
 
@@ -20,7 +99,7 @@ PÁRATLAN - KUTATÁS / FELFEDEZÉSEK
     flex-direction: column;
     aspect-ratio: 1/1;
     align-items: center;
-    border: 1px solid gray;
+    border-radius: 4px;
     background-color: rgb(255, 226, 172);
     gap: 10px;
 }
@@ -47,30 +126,72 @@ PÁRATLAN - KUTATÁS / FELFEDEZÉSEK
     font-size: 24px;
 }
 
-.korszak-btns {
+/*
+============================
+            EVEN
+============================
+*/
+
+/* Tozsde */
+.tozsde-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+    gap: 15px;
+}
+
+.tozsde-item {
     display: flex;
-    margin-bottom: -30px;
-    width: 100%;
-    padding-inline: 20px;
-    gap: 8px;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding-block: 20px;
+    border-radius: 4px;
+    background-color: #ddffdd;
 }
 
-.korszak-btns button {
-    width: 100%;
-    padding: 6px;
-    color: white;
-    font-size: 24px;
-    border: 1px solid black;
+.tozsde-purchase-opt {
+    display: flex;
+    justify-content: space-between;
 }
 
-.korszak-btns button[value=minus] {
-    background-color: var(--darkred);
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
+.tozsde-purchase-opt label:has(input[value="bevetel"]) {
+    padding: 10px;
+    border: 1px solid rgb(155, 169, 252);
+    background-color: rgb(234, 237, 255);
+    cursor: pointer;
+    border-radius: 4px;
 }
 
-.korszak-btns button[value=plus] {
-    background-color: var(--darkgreen);
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
+.tozsde-purchase-opt label:has(input[value="bevetel"]):hover {
+    outline: 2px solid rgb(155, 169, 252);
+}
+
+.tozsde-purchase-opt label:has(input[value="bevetel"]:checked) {
+    background: rgb(155, 169, 252);
+    outline: 2px solid rgb(122, 142, 255);
+}
+
+.tozsde-purchase-opt label:has(input[value="termeles"]) {
+    padding: 10px;
+    border: 1px solid rgb(252, 191, 155);
+    background-color: rgb(255, 236, 224);
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.tozsde-purchase-opt label:has(input[value="termeles"]):hover {
+    outline: 2px solid rgb(252, 191, 155);
+}
+
+.tozsde-purchase-opt label:has(input[value="termeles"]:checked) {
+    background: rgb(252, 191, 155);
+    outline: 2px solid rgb(255, 147, 85);
+}
+
+input[type=radio] {
+    position:absolute;
+    opacity: 0;
 }
