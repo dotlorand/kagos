@@ -1,9 +1,4 @@
 <?php
-/**
- * 
- * jatek logika es fobb jatek funkciok
- * 
- */
 
 function ensure_jatek_row($connection) {
     $query = "SELECT id FROM jatekok LIMIT 1";
@@ -145,24 +140,21 @@ function process_game_round($connection) {
     $current_round = get_current_round($connection);
     $new_round = $current_round + 1;
 
-    // Increment round.
     if (!update_current_round($connection, $new_round)) {
         return false;
     }
 
-    // Retrieve all custom recurring rules.
     $custom_rules_query = "SELECT team_id, field, amount FROM custom_rules";
     $custom_rules_result = mysqli_query($connection, $custom_rules_query);
 
     $custom_rules = [];
     if ($custom_rules_result) {
         while ($rule = mysqli_fetch_assoc($custom_rules_result)) {
-            $custom_rules[$rule['team_id']][] = $rule; // Group rules by team ID.
+            $custom_rules[$rule['team_id']][] = $rule;
         }
         mysqli_free_result($custom_rules_result);
     }
 
-    // Retrieve alliance counts: count teams per alliance (ignore empty alliances).
     $alliance_counts = [];
     $alliance_query = "SELECT alliance, COUNT(*) AS count FROM csapatok WHERE alliance <> '' GROUP BY alliance";
     $result_alliance = mysqli_query($connection, $alliance_query);
@@ -173,7 +165,6 @@ function process_game_round($connection) {
         mysqli_free_result($result_alliance);
     }
 
-    // Retrieve all teams.
     $team_query = "SELECT * FROM csapatok";
     $team_result = mysqli_query($connection, $team_query);
 
@@ -181,9 +172,7 @@ function process_game_round($connection) {
         return false;
     }
 
-    // Define the extra politikák mapping.
-    // Keys are the politikák values (as stored in the hidden JSON "value" property)
-    // and the inner associative array keys are the team stats to adjust.
+
     $politics_mapping = [
         'totemizmus'       => ['termeles' => 1],
         'zikkurat'         => ['kutatasi_pontok' => 1],
@@ -230,7 +219,6 @@ function process_game_round($connection) {
         $params = [];
         $param_types = "";
 
-        // Apply default game rules.
         foreach ($game_update_rules as $rule) {
             $target = $rule['target'];
             $increment = $rule['calculate']($team);
@@ -241,7 +229,6 @@ function process_game_round($connection) {
             $param_types .= "i";
         }
 
-        // Apply custom recurring rules for the current team.
         if (isset($custom_rules[$team_id])) {
             foreach ($custom_rules[$team_id] as $rule) {
                 $field = $rule['field'];
@@ -260,7 +247,6 @@ function process_game_round($connection) {
             }
         }
 
-        // *** Extra Politikák Bonus Block ***
         if (!empty($team['politikak'])) {
             $decoded_politics = json_decode($team['politikak'], true);
             if (is_array($decoded_politics)) {
@@ -273,7 +259,6 @@ function process_game_round($connection) {
                         }
                     }
                 }
-                // For each affected field, update our parameter array so it reflects the new values.
                 $fields_to_update = ['termeles', 'kutatasi_pontok', 'diplomaciai_pontok', 'katonai_pontok'];
                 foreach ($fields_to_update as $field) {
                     $index = array_search("$field = ?", $updates);
@@ -283,9 +268,7 @@ function process_game_round($connection) {
                 }
             }
         }
-        // *** End Extra Politikák Bonus Block ***
 
-        // *** Alliance Bonus Block ***
         if (!empty($team['alliance']) && isset($alliance_counts[$team['alliance']]) && $alliance_counts[$team['alliance']] >= 2) {
             $updated_team['diplomaciai_pontok'] += 1;
             $dipl_index = array_search("diplomaciai_pontok = ?", $updates);
@@ -298,18 +281,15 @@ function process_game_round($connection) {
             }
         }
         
-        // *** Clamp resource values so none fall below zero ***
         $resource_fields = ['bevetel','termeles','kutatasi_pontok','diplomaciai_pontok','katonai_pontok','bankok','gyarak','egyetemek','laktanyak'];
         foreach ($resource_fields as $field) {
-            $updated_team[$field] = max(0, $updated_team[$field]);  // enforce non-negative
+            $updated_team[$field] = max(0, $updated_team[$field]);
             $index = array_search("$field = ?", $updates);
             if ($index !== false) {
                 $params[$index] = $updated_team[$field];
             }
         }
-        // *** End clamping ***
 
-        // Build and execute the team update query.
         $update_query = "UPDATE csapatok SET " . implode(", ", $updates) . " WHERE id = ?";
         $params[] = $team_id;
         $param_types .= "s";
@@ -321,7 +301,6 @@ function process_game_round($connection) {
             mysqli_stmt_close($stmt);
         }
 
-        // Log the updated team data into history.
         log_team_history($connection, $new_round, $updated_team);
     }
 

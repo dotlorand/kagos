@@ -1,26 +1,29 @@
-// popups
+// Remove custom popup/close functions and use Bootstrap modals instead
 
-function popup(popupId) {
-    document.getElementById(popupId).style.display = "flex";
-    document.getElementById("popup-container").style.display = "flex";
+// Function to open Remove Team modal and set its data
+function openRemoveTeamModal(teamId, teamName) {
+    document.getElementById('teamNameConfirm').innerText = teamName;
+    document.getElementById('teamIdInput').value = teamId;
+    var removeModal = new bootstrap.Modal(document.getElementById('removeTeamModal'));
+    removeModal.show();
 }
 
-function closePopup() {
-    const container = document.getElementById("popup-container");
-    Array.from(container.children).forEach(child => {
-        if (!child.classList.contains("popup-bg")) {
-            child.style.display = "none";
-        }
-    });
-    container.style.display = "none";
-}
+// Remove old popup() and closePopup() functions
 
-function removePopup(teamId, teamName) {
-    var popupElem = document.getElementById('remove-team');
-    popupElem.querySelector('input[name="team_id"]').value = teamId;
-    popupElem.querySelector('#team-name-confirm').innerText = teamName;
-    popup('remove-team');
-}
+// When clicking the "Csapat törlése" button, attach its event to call openRemoveTeamModal()
+// This assumes the button with id "openRemoveTeamModal" is on the page.
+document.addEventListener('DOMContentLoaded', function() {
+    var removeBtn = document.getElementById('openRemoveTeamModal');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function() {
+            // Pass team id and name (should be rendered in data attributes or available globally)
+            // For example, we assume they are stored as data attributes on the button:
+            var teamId = this.getAttribute('data-team-id');
+            var teamName = this.getAttribute('data-team-name');
+            openRemoveTeamModal(teamId, teamName);
+        });
+    }
+});
 
 // toast
 
@@ -56,7 +59,8 @@ window.addEventListener('DOMContentLoaded', function() {
             existing.forEach(item => {
                 selectedOptions.push(item);
                 const chip = document.createElement('span');
-                chip.className = 'chip';
+                chip.className = 'badge rounded-pill bg-primary me-1 mb-1';
+                chip.style.cursor = 'pointer';
                 chip.textContent = item.text;
                 chip.dataset.value = item.value;
                 chip.addEventListener('click', function() {
@@ -88,7 +92,8 @@ select.addEventListener('change', function() {
     if (value && !selectedOptions.some(opt => opt.value === value)) {
         selectedOptions.push({ value, text });
         const chip = document.createElement('span');
-        chip.className = 'chip';
+        chip.className = 'badge rounded-pill bg-primary me-1 mb-1';
+        chip.style.cursor = 'pointer';
         chip.textContent = text;
         chip.dataset.value = value;
         chip.addEventListener('click', function() {

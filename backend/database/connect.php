@@ -16,8 +16,6 @@ $connection = mysqli_connect($host, $user, $pass, $dbnm, $port);
 if (!$connection) {
     error_log("Database connection failed: " . mysqli_connect_error());
     exit("Database connection error.");
-} else {
-    echo "db ok";
 }
 
 mysqli_set_charset($connection, 'utf8mb4');

@@ -1,29 +1,25 @@
 <?php
-// Process Building Purchase action for even rounds.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_action']) && isset($_POST['team_id']) && isset($_POST['purchase_building'])) {
-    // Ensure the session is started for flashing error messages.
+
     if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();
     }
     
-    // Use the submitted values directly.
     $action = trim($_POST['purchase_action']);
     $building_type = trim($_POST['purchase_building']);
     $team_id = trim($_POST['team_id']);
     
-    // Retrieve current currency and building counts.
     $stmt = mysqli_prepare($connection, "SELECT bevetel, termeles, bankok, gyarak, egyetemek, laktanyak FROM csapatok WHERE id = ?");
     mysqli_stmt_bind_param($stmt, "s", $team_id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_bind_result($stmt, $bevetel, $termeles, $bankok, $gyarak, $egyetemek, $laktanyak);
     if (!mysqli_stmt_fetch($stmt)) {
         $_SESSION['error'] = "Csapat nem található.";
-        header("Location: /round?uuid=" . urlencode($team_id));
+        header("Location: /round?uuid=" . urlencode($team_id). "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
         exit;
     }
     mysqli_stmt_close($stmt);
     
-    // Define building prices based on round and type.
     $building_prices = [
         'bank' => [
             2  => 10, 4  => 15, 6  => 20, 8  => 30, 10 => 30,
@@ -47,7 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_action']) &&
         ]
     ];
     
-    // Use the global current round (set in manage_game.php)
     global $current_round;
     if (isset($building_prices[$building_type][$current_round])) {
         $cost = $building_prices[$building_type][$current_round];
@@ -55,30 +50,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_action']) &&
         $cost = $current_round;
     }
     
-    // Check that a payment method was selected.
     $currency_type = trim($_POST['purchase_currency'] ?? '');
     if ($currency_type === '') {
         $_SESSION['error'] = "Válassz fizetési módot!";
-        header("Location: /round?uuid=" . urlencode($team_id));
+        header("Location: /round?uuid=" . urlencode($team_id). "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
         exit;
     }
     
-    // Determine available currency.
     if ($currency_type === 'bevetel') {
         $available_currency = $bevetel;
     } elseif ($currency_type === 'termeles') {
         $available_currency = $termeles;
     } else {
         $_SESSION['error'] = "Érvénytelen fizetési mód!";
-        header("Location: /round?uuid=" . urlencode($team_id));
+        header("Location: /round?uuid=" . urlencode($team_id). "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
         exit;
     }
 
-    // Save the selection for this building type
     $_SESSION['purchase_currency'][$building_type] = $currency_type;
 
     
-    // Determine current building count.
     switch ($building_type) {
         case 'bank':
             $current_building = $bankok;
@@ -94,18 +85,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_action']) &&
             break;
         default:
             $_SESSION['error'] = "Érvénytelen épület típus!";
-            header("Location: /round?uuid=" . urlencode($team_id));
+            header("Location: /round?uuid=" . urlencode($team_id). "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
             exit;
     }
     
-    // Process the action.
     if ($action === 'plus') {
         if ($available_currency >= $cost) {
             $available_currency -= $cost;
             $current_building++;
         } else {
             $_SESSION['error'] = "Nincs elég pénz a vásárláshoz!";
-            header("Location: /round?uuid=" . urlencode($team_id));
+            header("Location: /round?uuid=" . urlencode($team_id). "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
             exit;
         }
     } elseif ($action === 'minus') {
@@ -114,16 +104,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_action']) &&
             $available_currency += $cost;
         } else {
             $_SESSION['error'] = "Nincs épület visszaadásra!";
-            header("Location: /round?uuid=" . urlencode($team_id));
+            header("Location: /round?uuid=" . urlencode($team_id). "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
             exit;
         }
     } else {
         $_SESSION['error'] = "Érvénytelen művelet!";
-        header("Location: /round?uuid=" . urlencode($team_id));
+        header("Location: /round?uuid=" . urlencode($team_id). "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
         exit;
     }
     
-    // Update the team's record if no error occurred.
     if ($currency_type === 'bevetel') {
         $new_bevetel = $available_currency;
         $new_termeles = $termeles;
@@ -155,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_action']) &&
     mysqli_stmt_bind_param($stmt, "iiiiiis", $new_bevetel, $new_termeles, $new_bankok, $new_gyarak, $new_egyetem, $new_laktanyak, $team_id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
-    header("Location: /round?uuid=" . urlencode($team_id));
+    header("Location: /round?uuid=" . urlencode($team_id) . "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
     exit;
 }
 ?>

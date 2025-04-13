@@ -1,22 +1,12 @@
 <?php include(__DIR__ . '/../../database/connect.php'); ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme=dark>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kagos jatek</title>
 
-    <link rel="stylesheet" href="/public/static/css/main.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
 </head>
 <body>
-
-<nav>
-    <span>dev nav</span>
-    <a href="/">[leaderboard]</a>
-    <a href="/init">[init]</a>
-    <a href="/round">[rounds]</a>
-    <a href="/management">[management]</a>
-</nav>
-
-<main>

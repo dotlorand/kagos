@@ -72,7 +72,12 @@ FLUSH PRIVILEGES;
 Tables:
 ```
 csapatok
-jatekmenet
+custom_rules
+ensz_votes
+ensz_winnerpoll
+haboruk
+jatekok
+jatekok_history
 ```
 
 Import:
@@ -82,19 +87,13 @@ Import:
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Apr 01, 2025 at 09:03 PM
+-- Generation Time: Apr 13, 2025 at 04:47 PM
 -- Server version: 10.11.11-MariaDB-0+deb12u1
 -- PHP Version: 8.2.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
 
 --
 -- Database: `kagos`
@@ -121,17 +120,70 @@ CREATE TABLE `csapatok` (
   `gyarak` int(11) NOT NULL DEFAULT 0,
   `egyetemek` int(11) NOT NULL DEFAULT 0,
   `laktanyak` int(11) NOT NULL DEFAULT 0,
-  `politikak` text DEFAULT NULL
+  `politikak` text DEFAULT NULL,
+  `research_era` int(11) NOT NULL DEFAULT 1,
+  `research_found` int(11) NOT NULL DEFAULT 0,
+  `winner` int(11) NOT NULL DEFAULT 0,
+  `alliance` varchar(255) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_hungarian_ci;
 
+-- --------------------------------------------------------
+
 --
--- Dumping data for table `csapatok`
+-- Table structure for table `custom_rules`
 --
 
-INSERT INTO `csapatok` (`id`, `letrehozva`, `nev`, `allamforma`, `kontinens`, `bevetel`, `termeles`, `kutatasi_pontok`, `diplomaciai_pontok`, `katonai_pontok`, `bankok`, `gyarak`, `egyetemek`, `laktanyak`, `politikak`) VALUES
-('f37c03f6-0f34-11f0-b730-00163e202b7e', '2025-04-01 20:07:34', 'dsadsaads', 'demokratikus', 'dsadsaads', 18, 39, 0, 0, 0, 6, 13, 0, 0, ''),
-('f5ae11d1-0f34-11f0-b730-00163e202b7e', '2025-04-01 20:07:38', 'dsadsaadsdsadsaads', 'test', 'fds', 3, 3, 0, 0, 0, 1, 1, 0, 0, ''),
-('f7a68dac-0f34-11f0-b730-00163e202b7e', '2025-04-01 20:07:41', '123', 'demokratikus', '123', 0, 0, 0, 72, 72, 0, 0, 0, 24, '');
+CREATE TABLE `custom_rules` (
+  `id` int(11) NOT NULL,
+  `team_id` char(36) NOT NULL,
+  `field` varchar(50) NOT NULL,
+  `amount` int(11) NOT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_hungarian_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ensz_votes`
+--
+
+CREATE TABLE `ensz_votes` (
+  `id` int(11) NOT NULL,
+  `round` int(11) NOT NULL,
+  `proposal_index` int(11) NOT NULL,
+  `team_id` char(36) NOT NULL,
+  `vote_option` enum('yes','no','skip','finalized','applied','targeted') NOT NULL,
+  `vote_count` int(11) NOT NULL,
+  `target` varchar(36) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_hungarian_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ensz_winnerpoll`
+--
+
+CREATE TABLE `ensz_winnerpoll` (
+  `id` int(11) NOT NULL,
+  `candidate_team_id` char(36) NOT NULL,
+  `yes_votes` int(11) NOT NULL DEFAULT 0,
+  `no_votes` int(11) NOT NULL DEFAULT 0,
+  `status` enum('ongoing','final') NOT NULL DEFAULT 'ongoing',
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_hungarian_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `haboruk`
+--
+
+CREATE TABLE `haboruk` (
+  `id` int(11) NOT NULL,
+  `winner_id` varchar(36) NOT NULL,
+  `loser_id` varchar(36) NOT NULL,
+  `conquered_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_hungarian_ci;
 
 -- --------------------------------------------------------
 
@@ -145,13 +197,6 @@ CREATE TABLE `jatekok` (
   `phase` enum('init','active') NOT NULL DEFAULT 'init',
   `last_update` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_hungarian_ci;
-
---
--- Dumping data for table `jatekok`
---
-
-INSERT INTO `jatekok` (`id`, `current_round`, `phase`, `last_update`) VALUES
-(4, 3, 'active', '2025-04-01 20:11:02');
 
 -- --------------------------------------------------------
 
@@ -179,24 +224,6 @@ CREATE TABLE `jatekok_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_hungarian_ci;
 
 --
--- Dumping data for table `jatekok_history`
---
-
-INSERT INTO `jatekok_history` (`id`, `round`, `team_id`, `nev`, `allamforma`, `kontinens`, `bevetel`, `termeles`, `kutatasi_pontok`, `diplomaciai_pontok`, `katonai_pontok`, `bankok`, `gyarak`, `egyetemek`, `laktanyak`, `created_at`) VALUES
-(53, 0, 'f37c03f6-0f34-11f0-b730-00163e202b7e', 'dsadsaads', 'demokratikus', 'dsadsaads', 0, 0, 0, 0, 0, 6, 13, 0, 0, '2025-04-01 20:10:50'),
-(54, 0, 'f5ae11d1-0f34-11f0-b730-00163e202b7e', 'dsadsaadsdsadsaads', 'test', 'fds', 0, 0, 0, 0, 0, 1, 1, 0, 0, '2025-04-01 20:10:50'),
-(55, 0, 'f7a68dac-0f34-11f0-b730-00163e202b7e', '123', 'demokratikus', '123', 0, 0, 0, 0, 0, 0, 0, 0, 24, '2025-04-01 20:10:50'),
-(56, 1, 'f37c03f6-0f34-11f0-b730-00163e202b7e', 'dsadsaads', 'demokratikus', 'dsadsaads', 6, 13, 0, 0, 0, 6, 13, 0, 0, '2025-04-01 20:10:58'),
-(57, 1, 'f5ae11d1-0f34-11f0-b730-00163e202b7e', 'dsadsaadsdsadsaads', 'test', 'fds', 1, 1, 0, 0, 0, 1, 1, 0, 0, '2025-04-01 20:10:58'),
-(58, 1, 'f7a68dac-0f34-11f0-b730-00163e202b7e', '123', 'demokratikus', '123', 0, 0, 0, 24, 24, 0, 0, 0, 24, '2025-04-01 20:10:58'),
-(59, 2, 'f37c03f6-0f34-11f0-b730-00163e202b7e', 'dsadsaads', 'demokratikus', 'dsadsaads', 12, 26, 0, 0, 0, 6, 13, 0, 0, '2025-04-01 20:11:02'),
-(60, 2, 'f5ae11d1-0f34-11f0-b730-00163e202b7e', 'dsadsaadsdsadsaads', 'test', 'fds', 2, 2, 0, 0, 0, 1, 1, 0, 0, '2025-04-01 20:11:02'),
-(61, 2, 'f7a68dac-0f34-11f0-b730-00163e202b7e', '123', 'demokratikus', '123', 0, 0, 0, 48, 48, 0, 0, 0, 24, '2025-04-01 20:11:02'),
-(62, 3, 'f37c03f6-0f34-11f0-b730-00163e202b7e', 'dsadsaads', 'demokratikus', 'dsadsaads', 18, 39, 0, 0, 0, 6, 13, 0, 0, '2025-04-01 20:11:02'),
-(63, 3, 'f5ae11d1-0f34-11f0-b730-00163e202b7e', 'dsadsaadsdsadsaads', 'test', 'fds', 3, 3, 0, 0, 0, 1, 1, 0, 0, '2025-04-01 20:11:02'),
-(64, 3, 'f7a68dac-0f34-11f0-b730-00163e202b7e', '123', 'demokratikus', '123', 0, 0, 0, 72, 72, 0, 0, 0, 24, '2025-04-01 20:11:02');
-
---
 -- Indexes for dumped tables
 --
 
@@ -204,6 +231,32 @@ INSERT INTO `jatekok_history` (`id`, `round`, `team_id`, `nev`, `allamforma`, `k
 -- Indexes for table `csapatok`
 --
 ALTER TABLE `csapatok`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `custom_rules`
+--
+ALTER TABLE `custom_rules`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `team_id` (`team_id`);
+
+--
+-- Indexes for table `ensz_votes`
+--
+ALTER TABLE `ensz_votes`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_round_proposal_team` (`round`,`proposal_index`,`team_id`);
+
+--
+-- Indexes for table `ensz_winnerpoll`
+--
+ALTER TABLE `ensz_winnerpoll`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `haboruk`
+--
+ALTER TABLE `haboruk`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -223,19 +276,40 @@ ALTER TABLE `jatekok_history`
 --
 
 --
+-- AUTO_INCREMENT for table `custom_rules`
+--
+ALTER TABLE `custom_rules`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `ensz_votes`
+--
+ALTER TABLE `ensz_votes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `ensz_winnerpoll`
+--
+ALTER TABLE `ensz_winnerpoll`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `haboruk`
+--
+ALTER TABLE `haboruk`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `jatekok`
 --
 ALTER TABLE `jatekok`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `jatekok_history`
 --
 ALTER TABLE `jatekok_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 ```

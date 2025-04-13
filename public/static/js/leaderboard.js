@@ -1,6 +1,6 @@
 // shadow on stuck thead
 document.addEventListener('DOMContentLoaded', function() {
-    const thead = document.querySelector('table thead');
+    const thead = document.getElementById('main-thead');
     if (!thead) return;
 
     window.addEventListener('scroll', function() {

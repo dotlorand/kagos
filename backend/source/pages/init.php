@@ -3,7 +3,7 @@ include(__DIR__ . '/../components/head.php');
 include_once(__DIR__ . '/../logic/game_backend.php');
 
 if (get_game_phase($connection) === 'active') {
-    header("Location: /round");
+    header("Location: /round". "?access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
     exit;
 }
 
@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['add_team'])) {
     $nev        = trim($_POST['nev'] ?? '');
     $allamforma = trim($_POST['allamforma'] ?? '');
     $kontinens  = trim($_POST['kontinens'] ?? '');
-    // Updated allowed államforma values
     $valid_allamforma = ['törzsi', 'arisztokratikus', 'türannisz', 'kalmár', 'modern', 'kommunista'];
     if ($nev === '' || $allamforma === '' || $kontinens === '') {
         $error = "Minden mezőt ki kell tölteni!";
@@ -72,7 +71,7 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
         $gyarak      = (int) ($_POST['gyarak'] ?? 0);
         $egyetemek   = (int) ($_POST['egyetemek'] ?? 0);
         $laktanyak   = (int) ($_POST['laktanyak'] ?? 0);
-        $politikak   = trim($_POST['politikak'] ?? ''); // JSON string from chips
+        $politikak   = trim($_POST['politikak'] ?? '');
 
         if ($allamforma === '' || $kontinens === '') {
             $error = "Hiányzó adatok!";
@@ -89,12 +88,10 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
         ) {
             $error = "Egy vagy több érték túl magas (Max: 99999)";
         } else {
-            // Updated valid államforma values
             $valid_allamforma = ['törzsi', 'arisztokratikus', 'türannisz', 'kalmár', 'modern', 'kommunista'];
             if (!in_array($allamforma, $valid_allamforma)) {
                 $error = "Érvénytelen államforma.";
             } else {
-                // Politics validation block
                 $allowed_politics = [];
                 switch ($allamforma) {
                     case 'törzsi':
@@ -116,13 +113,11 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
                         $allowed_politics = ['munkaverseny', 'kgst', 'varsoi', 'komintern', 'gulag', 'allamrendor', 'atomfegyver', 'propaganda'];
                         break;
                 }
-                // Decode the JSON from the hidden input
                 $decoded_politikak = json_decode($politikak, true);
                 if (!is_array($decoded_politikak)) {
                     $error = "Érvénytelen politikák formátum.";
                 } else {
                     foreach ($decoded_politikak as $item) {
-                        // Expect each chip to be an object with a "value" property
                         if (!isset($item['value']) || !in_array($item['value'], $allowed_politics)) {
                             $error = "Érvénytelen politika lett kiválasztva a megadott államforma számára.";
                             break;
@@ -130,8 +125,6 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
                     }
                 }
                 if (!isset($error)) {
-                    // End Politics validation block
-
                     $stmt = mysqli_prepare($connection, "UPDATE csapatok SET allamforma = ?, kontinens = ?, bevetel = ?, termeles = ?, kutatasi_pontok = ?, diplomaciai_pontok = ?, katonai_pontok = ?, bankok = ?, gyarak = ?, egyetemek = ?, laktanyak = ?, politikak = ? WHERE id = ?");
                     if (!$stmt) {
                         $error = "Hiba a lekérdezés előkészítésénél: " . mysqli_error($connection);
@@ -154,7 +147,7 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
                             $team_id
                         );
                         if (mysqli_stmt_execute($stmt)) {
-                            header("Location: /init?uuid=" . urlencode($team_id));
+                            header("Location: /init?uuid=" . urlencode($team_id). "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
                             exit;
                         } else {
                             $error = "Hiba az adatok frissítésekor: " . mysqli_stmt_error($stmt);
@@ -167,7 +160,6 @@ if (isset($_POST['kezdo_megerosites']) && $_POST['kezdo_megerosites'] !== "") {
     }
 }
 
-
 // start game
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['start_game'])) {
     $query = "SELECT COUNT(*) AS team_count FROM csapatok";
@@ -177,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['start_game'])) {
         $error = "Nincs csapat hozzáadva!";
     } else {
         if (start_game_now($connection)) {
-            header("Location: /round");
+            header("Location: /round". "?access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
             exit;
         } else {
             $error = "Hiba a játék elindításakor!";
@@ -209,13 +201,13 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
 }
 ?>
 
-<style>
-    .popup-container > div { display: none; }
-</style>
-<link rel="stylesheet" href="/public/static/css/pages/manage.css">
-
-<nav class="teams-nav">
-    <ul>
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#teamsNavbar" aria-controls="teamsNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="teamsNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 d-flex flex-wrap">
         <?php
         $query = "SELECT id, nev FROM csapatok ORDER BY letrehozva";
         $result = mysqli_query($connection, $query);
@@ -227,215 +219,271 @@ if (isset($_GET['uuid']) && $_GET['uuid'] !== '') {
         while ($nav_team = mysqli_fetch_assoc($result)) {
             $team_id_html = htmlspecialchars($nav_team['id'], ENT_QUOTES, 'UTF-8');
             $team_name_html = htmlspecialchars($nav_team['nev'], ENT_QUOTES, 'UTF-8');
-            $active_class = (isset($team) && $team['id'] === $nav_team['id']) ? 'active' : '';
-            echo "<li><a href='/init?uuid=" . urlencode($team_id_html) . "' class='{$active_class}'>{$team_name_html}</a></li>";
+            $active_class = (isset($team) && $team['id'] === $nav_team['id']) ? 'btn-primary' : 'btn-outline-primary';
+            echo "<li class='nav-item me-2 mb-2'><a href='/init?uuid=" . urlencode($team_id_html) . "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8') . "' class='btn {$active_class}'>{$team_name_html}</a></li>";
         }
         mysqli_free_result($result);
         ?>
-        <button onclick="popup('add-team')"><img class="icon" src="/public/static/icons/plus.svg">Új csapat</button>
-    </ul>
-    <form action="" method="post">
-        <input type="hidden" name="start_game" value="1">
-        <button type="submit"><img class="icon" src="/public/static/icons/play.svg">Játék indítása</button>
-    </form>
+      </ul>
+      <div class="d-flex">
+        <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addTeamModal">Új csapat</button>
+        <form action="/init?access_key=<?php echo htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" method="post" class="d-flex" onsubmit="return confirm('Biztosan elindítod a játékot?');">
+          <input type="hidden" name="start_game" value="1">
+          <button type="submit" class="btn btn-success">Játék indítása</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </nav>
 
-<?php if (isset($error)) : ?>
-    <div class="toast error"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
-<?php endif; ?>
-<?php if (isset($success)) : ?>
-    <div class="toast success"><?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></div>
-<?php endif; ?>
 
-<div id="popup-container">
-    <div class="popup-bg" onclick="closePopup()"></div>
-    <div class="popup-block" id="add-team">
-        <div class="popup-header">
-            <h2>Csapat hozzáadása</h2>
-            <button onclick="closePopup()"><img class="icon" src="/public/static/icons/close.svg" alt="Mégse" title="Mégse"></button>
-        </div>
-        <form action="/init" method="post">
-            <input required type="text" name="nev" autocomplete="off" placeholder="Csapat név" maxlength="30">
-            <select required name="allamforma">
-                <option value="" disabled selected>Válassz államformát</option>
-                <option value="törzsi">Törzsi</option>
-                <option value="arisztokratikus">Arisztokratikus</option>
-                <option value="türannisz">Türannisz</option>
-                <option value="kalmár">Kalmár</option>
-                <option value="modern">Modern</option>
-                <option value="kommunista">Kommunista</option>
-            </select>
-            <input required type="text" name="kontinens" autocomplete="off" placeholder="Kontinens" maxlength="30">
-            <input type="submit" name="add_team" value="Hozzáadás">
-        </form>
+<div class="container mt-3">
+  <?php if (isset($error)) : ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <div class="popup-block" id="remove-team">
-        <div class="popup-header">
-            <h2>Csapat törlése</h2>
-            <button onclick="closePopup()"><img class="icon" src="/public/static/icons/close.svg" alt="Mégse" title="Mégse"></button>
-        </div>
-        <form action="/init" method="post">
-            <p>Biztosan törlöd a <strong id="team-name-confirm"></strong> csapatot?</p>
-            <input type="hidden" name="team_id" value="">
-            <input type="submit" name="remove_team" value="Törlés">
-        </form>
+  <?php endif; ?>
+  <?php if (isset($success)) : ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
+  <?php endif; ?>
 </div>
 
+<div class="modal fade" id="addTeamModal" tabindex="-1" aria-labelledby="addTeamModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/init?access_key=<?php echo htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addTeamModalLabel">Csapat hozzáadása</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="team-nev" class="form-label">Csapat név</label>
+            <input required type="text" class="form-control" id="team-nev" name="nev" autocomplete="off" placeholder="Csapat név" maxlength="30">
+          </div>
+          <div class="mb-3">
+            <label for="team-allamforma" class="form-label">Államforma</label>
+            <select required class="form-select" id="team-allamforma" name="allamforma">
+              <option value="" disabled selected>Válassz államformát</option>
+              <option value="törzsi">Törzsi falu</option>
+              <option value="arisztokratikus">Arisztokratikus köztársaság</option>
+              <option value="türannisz">Türannisz</option>
+              <option value="kalmár">Kalmár köztársaság</option>
+              <option value="modern">Modern demokrácia</option>
+              <option value="kommunista">Kommunista diktatúra</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="team-kontinens" class="form-label">Kontinens</label>
+            <input required type="text" class="form-control" id="team-kontinens" name="kontinens" autocomplete="off" placeholder="Kontinens" maxlength="30">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+          <button type="submit" name="add_team" value="Hozzáadás" class="btn btn-primary">Hozzáadás</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="removeTeamModal" tabindex="-1" aria-labelledby="removeTeamModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeTeamModalLabel">Csapat törlése</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+      </div>
+      <div class="modal-body">
+        <p>Biztosan törlöd a <strong id="teamNameConfirm"></strong> csapatot?</p>
+        <form action="/init?access_key=<?php echo htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" method="post" id="removeTeamForm">
+          <input type="hidden" name="team_id" id="teamIdInput" value="">
+          <input type="hidden" name="remove_team" value="1">
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+        <button type="button" class="btn btn-danger" onclick="document.getElementById('removeTeamForm').submit();">Törlés</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <?php if (isset($team)) : ?>
-    <div class="container">
-        <div class="container-header">
-            <h1><span><?php echo htmlspecialchars($team['nev'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span> kezdő tőkéje</h1>
-            <?php
-                $onclick = "removePopup(" . json_encode($team['id'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-                         . ", " . json_encode($team['nev'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ")";
-            ?>
-            <button onclick="<?php echo htmlspecialchars($onclick, ENT_QUOTES, 'UTF-8'); ?>">Csapat törlése</button>
-        </div>
-        <form class="init-form" action="/init?uuid=<?php echo urlencode($team['id'] ?? ''); ?>" method="post">
-            <input type="hidden" name="team_id" value="<?php echo htmlspecialchars($team['id'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-            <div class="card-container">
-                <div class="card team-info-card">
-                    <h2>Csapat Infók</h2>
-                    <div class="field-group">
-                        <label>Csapatnév</label>
-                        <div class="static-field"><?php echo htmlspecialchars($team['nev'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
-                    </div>
-                    <div class="field-group">
-                        <label for="allamforma">Államforma</label>
-                        <select id="allamforma" name="allamforma">
-                            <option value="törzsi" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'törzsi') ? 'selected' : ''; ?>>Törzsi falu</option>
-                            <option value="arisztokratikus" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'arisztokratikus') ? 'selected' : ''; ?>>Arisztokratikus köztársaság</option>
-                            <option value="türannisz" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'türannisz') ? 'selected' : ''; ?>>Türannisz</option>
-                            <option value="kalmár" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'kalmár') ? 'selected' : ''; ?>>Kalmár köztársaság</option>
-                            <option value="modern" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'modern') ? 'selected' : ''; ?>>Modern demokrácia</option>
-                            <option value="kommunista" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'kommunista') ? 'selected' : ''; ?>>Kommunista diktatúra</option>
-                        </select>
-                    </div>
-                    <div class="field-group">
-                        <label for="kontinens">Kontinens</label>
-                        <input type="text" id="kontinens" name="kontinens" value="<?php echo htmlspecialchars($team['kontinens'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                    <div class="field-group">
-                        <label for="politikak-select">Politikák</label>
-                        <div class="chips-container" id="chips-container"></div>
-                        <select id="politikak-select" name="politikak">
-                            <option value="" disabled selected>Válassz politikát</option>
-                            <?php
-                            if (isset($team['allamforma'])) {
-                                switch ($team['allamforma']) {
-                                    case 'törzsi':
-                                        echo '<option value="totemizmus">Totemizmus</option>';
-                                        echo '<option value="zikkurat">Zikkurat</option>';
-                                        echo '<option value="nomad">Nomád életmód</option>';
-                                        echo '<option value="torzsi_szovetseg">Törzsi szövetség</option>';
-                                        break;
-                                    case 'arisztokratikus':
-                                        echo '<option value="monoteizmus">Monoteizmus</option>';
-                                        echo '<option value="politeizmus">Politeizmus</option>';
-                                        echo '<option value="xii_tabla">XII. táblás törvények</option>';
-                                        echo '<option value="pantheon">Pantheon</option>';
-                                        echo '<option value="nepgyules">Népgyűlés</option>';
-                                        echo '<option value="legio">Légió</option>';
-                                        break;
-                                    case 'türannisz':
-                                        echo '<option value="monoteizmus">Monoteizmus</option>';
-                                        echo '<option value="politeizmus">Politeizmus</option>';
-                                        echo '<option value="akropolisz">Akropolisz</option>';
-                                        echo '<option value="strategosz">Sztratégosz</option>';
-                                        echo '<option value="deloszi_szovetseg">Déloszi szövetség</option>';
-                                        echo '<option value="ezustbany">Ezüstbányák feltárása</option>';
-                                        break;
-                                    case 'kalmár':
-                                        echo '<option value="karavella">Karavella</option>';
-                                        echo '<option value="monopolium">Monopólium</option>';
-                                        echo '<option value="keresztes">Keresztes hadjárat</option>';
-                                        echo '<option value="obszervatori">Obszervatórium</option>';
-                                        echo '<option value="inkvizicio">Inkvizíció</option>';
-                                        echo '<option value="gyarmatositas">Gyarmatosítás</option>';
-                                        break;
-                                    case 'modern':
-                                        echo '<option value="kapitalizmus">Kapitalizmus</option>';
-                                        echo '<option value="vilagbank">Világbank</option>';
-                                        echo '<option value="erasmus">Erasmus-projekt</option>';
-                                        echo '<option value="nemzeti_hadsereg">Nemzeti hadsereg</option>';
-                                        echo '<option value="new_deal">New deal</option>';
-                                        echo '<option value="schengeni">Schengeni egyezmény</option>';
-                                        echo '<option value="emberi_jogok">Emberi és polgári jogok</option>';
-                                        echo '<option value="nato">NATO</option>';
-                                        break;
-                                    case 'kommunista':
-                                        echo '<option value="munkaverseny">Munkaverseny</option>';
-                                        echo '<option value="kgst">KGST</option>';
-                                        echo '<option value="varsoi">Varsói szerződés</option>';
-                                        echo '<option value="komintern">Komintern</option>';
-                                        echo '<option value="gulag">GULÁG</option>';
-                                        echo '<option value="allamrendor">Államrendőrség</option>';
-                                        echo '<option value="atomfegyver">Atomfegyverek</option>';
-                                        echo '<option value="propaganda">Propaganda sajtó</option>';
-                                        break;
-                                    default:
-                                        echo '<option value="">Nincs elérhető politika</option>';
-                                }
-                            }
-                            ?>
-                        </select>
-                        <!-- Retain hidden input for JS work -->
-                        <input type="hidden" name="politikak" id="politikak-hidden" value="<?php echo htmlspecialchars($team['politikak'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                </div>
-                <div class="card stats-card">
-                    <h2>Erőforrások</h2>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="bevetel">Bevétel</label>
-                            <input type="number" id="bevetel" name="bevetel" value="<?php echo htmlspecialchars($team['bevetel'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label for="termeles">Termelés</label>
-                            <input type="number" id="termeles" name="termeles" value="<?php echo htmlspecialchars($team['termeles'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                        </div>
-                    </div>
-                    <div class="field-group">
-                        <label for="kutatasi_pontok">Kutatási pontok</label>
-                        <input type="number" id="kutatasi_pontok" name="kutatasi_pontok" value="<?php echo htmlspecialchars($team['kutatasi_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                    <div class="field-group">
-                        <label for="diplomaciai_pontok">Diplomáciai pontok</label>
-                        <input type="number" id="diplomaciai_pontok" name="diplomaciai_pontok" value="<?php echo htmlspecialchars($team['diplomaciai_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                    <div class="field-group">
-                        <label for="katonai_pontok">Katonai pontok</label>
-                        <input type="number" id="katonai_pontok" name="katonai_pontok" value="<?php echo htmlspecialchars($team['katonai_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                </div>
-                <div class="card institutions-card">
-                    <h2>Épületek</h2>
-                    <div class="field-group">
-                        <label for="bankok">Bankok</label>
-                        <input type="number" id="bankok" name="bankok" value="<?php echo htmlspecialchars($team['bankok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                    <div class="field-group">
-                        <label for="gyarak">Gyárak</label>
-                        <input type="number" id="gyarak" name="gyarak" value="<?php echo htmlspecialchars($team['gyarak'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                    <div class="field-group">
-                        <label for="egyetemek">Egyetemek</label>
-                        <input type="number" id="egyetemek" name="egyetemek" value="<?php echo htmlspecialchars($team['egyetemek'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                    <div class="field-group">
-                        <label for="laktanyak">Laktanyak</label>
-                        <input type="number" id="laktanyak" name="laktanyak" value="<?php echo htmlspecialchars($team['laktanyak'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                </div>
-            </div>
-            <input type="submit" class="submit-btn" name="kezdo_megerosites" value="Kezdő adatok megerősítése">
-        </form>
+<div class="container my-4">
+  <div class="row mb-3 align-items-center">
+    <div class="col">
+      <h1><?php echo htmlspecialchars($team['nev'], ENT_QUOTES, 'UTF-8'); ?> kezdő tőkéje</h1>
     </div>
+    <div class="col-auto">
+      <button type="button" class="btn btn-danger" onclick="openRemoveTeamModal('<?php echo $team['id']; ?>', '<?php echo htmlspecialchars($team['nev'], ENT_QUOTES, 'UTF-8'); ?>')">Csapat törlése</button>
+    </div>
+  </div>
+  <form class="init-form" action="/init?uuid=<?php echo urlencode($team['id']); ?>&access_key=<?php echo htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" method="post">
+    <input type="hidden" name="team_id" value="<?php echo htmlspecialchars($team['id'], ENT_QUOTES, 'UTF-8'); ?>">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="card mb-3">
+          <div class="card-header">Csapat Infók</div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label">Csapatnév</label>
+              <p class="form-control-plaintext"><?php echo htmlspecialchars($team['nev'], ENT_QUOTES, 'UTF-8'); ?></p>
+            </div>
+            <div class="mb-3">
+              <label for="allamforma" class="form-label">Államforma</label>
+              <select id="allamforma" name="allamforma" class="form-select">
+                <option value="törzsi" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'törzsi') ? 'selected' : ''; ?>>Törzsi falu</option>
+                <option value="arisztokratikus" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'arisztokratikus') ? 'selected' : ''; ?>>Arisztokratikus köztársaság</option>
+                <option value="türannisz" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'türannisz') ? 'selected' : ''; ?>>Türannisz</option>
+                <option value="kalmár" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'kalmár') ? 'selected' : ''; ?>>Kalmár köztársaság</option>
+                <option value="modern" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'modern') ? 'selected' : ''; ?>>Modern demokrácia</option>
+                <option value="kommunista" <?php echo (isset($team['allamforma']) && $team['allamforma'] === 'kommunista') ? 'selected' : ''; ?>>Kommunista diktatúra</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="kontinens" class="form-label">Kontinens</label>
+              <input type="text" id="kontinens" name="kontinens" class="form-control" value="<?php echo htmlspecialchars($team['kontinens'], ENT_QUOTES, 'UTF-8'); ?>">
+            </div>
+            <div class="mb-3">
+              <label for="politikak-select" class="form-label">Politikák</label>
+              <div id="chips-container" class="mb-2"></div>
+              <select id="politikak-select" name="politikak" class="form-select">
+                <option value="" disabled selected>Válassz politikát</option>
+                <?php
+                if (isset($team['allamforma'])) {
+                    switch ($team['allamforma']) {
+                        case 'törzsi':
+                            echo '<option value="totemizmus">Totemizmus</option>';
+                            echo '<option value="zikkurat">Zikkurat</option>';
+                            echo '<option value="nomad">Nomád életmód</option>';
+                            echo '<option value="torzsi_szovetseg">Törzsi szövetség</option>';
+                            break;
+                        case 'arisztokratikus':
+                            echo '<option value="monoteizmus">Monoteizmus</option>';
+                            echo '<option value="politeizmus">Politeizmus</option>';
+                            echo '<option value="xii_tabla">XII. táblás törvények</option>';
+                            echo '<option value="pantheon">Pantheon</option>';
+                            echo '<option value="nepgyules">Népgyűlés</option>';
+                            echo '<option value="legio">Légió</option>';
+                            break;
+                        case 'türannisz':
+                            echo '<option value="monoteizmus">Monoteizmus</option>';
+                            echo '<option value="politeizmus">Politeizmus</option>';
+                            echo '<option value="akropolisz">Akropolisz</option>';
+                            echo '<option value="strategosz">Sztratégosz</option>';
+                            echo '<option value="deloszi_szovetseg">Déloszi szövetség</option>';
+                            echo '<option value="ezustbany">Ezüstbányák feltárása</option>';
+                            break;
+                        case 'kalmár':
+                            echo '<option value="karavella">Karavella</option>';
+                            echo '<option value="monopolium">Monopólium</option>';
+                            echo '<option value="keresztes">Keresztes hadjárat</option>';
+                            echo '<option value="obszervatori">Obszervatórium</option>';
+                            echo '<option value="inkvizicio">Inkvizíció</option>';
+                            echo '<option value="gyarmatositas">Gyarmatosítás</option>';
+                            break;
+                        case 'modern':
+                            echo '<option value="kapitalizmus">Kapitalizmus</option>';
+                            echo '<option value="vilagbank">Világbank</option>';
+                            echo '<option value="erasmus">Erasmus-projekt</option>';
+                            echo '<option value="nemzeti_hadsereg">Nemzeti hadsereg</option>';
+                            echo '<option value="new_deal">New deal</option>';
+                            echo '<option value="schengeni">Schengeni egyezmény</option>';
+                            echo '<option value="emberi_jogok">Emberi és polgári jogok</option>';
+                            echo '<option value="nato">NATO</option>';
+                            break;
+                        case 'kommunista':
+                            echo '<option value="munkaverseny">Munkaverseny</option>';
+                            echo '<option value="kgst">KGST</option>';
+                            echo '<option value="varsoi">Varsói szerződés</option>';
+                            echo '<option value="komintern">Komintern</option>';
+                            echo '<option value="gulag">GULÁG</option>';
+                            echo '<option value="allamrendor">Államrendőrség</option>';
+                            echo '<option value="atomfegyver">Atomfegyverek</option>';
+                            echo '<option value="propaganda">Propaganda sajtó</option>';
+                            break;
+                        default:
+                            echo '<option value="">Nincs elérhető politika</option>';
+                    }
+                }
+                ?>
+              </select>
+              <input type="hidden" name="politikak" id="politikak-hidden" value="<?php echo htmlspecialchars($team['politikak'], ENT_QUOTES, 'UTF-8'); ?>">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card mb-3">
+          <div class="card-header">Erőforrások</div>
+          <div class="card-body">
+            <div class="row mb-3">
+              <div class="col">
+                <label for="bevetel" class="form-label">Bevétel</label>
+                <input type="number" class="form-control" id="bevetel" name="bevetel" value="<?php echo htmlspecialchars($team['bevetel'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+              </div>
+              <div class="col">
+                <label for="termeles" class="form-label">Termelés</label>
+                <input type="number" class="form-control" id="termeles" name="termeles" value="<?php echo htmlspecialchars($team['termeles'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="kutatasi_pontok" class="form-label">Kutatási pontok</label>
+              <input type="number" class="form-control" id="kutatasi_pontok" name="kutatasi_pontok" value="<?php echo htmlspecialchars($team['kutatasi_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+            </div>
+            <div class="mb-3">
+              <label for="diplomaciai_pontok" class="form-label">Diplomáciai pontok</label>
+              <input type="number" class="form-control" id="diplomaciai_pontok" name="diplomaciai_pontok" value="<?php echo htmlspecialchars($team['diplomaciai_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+            </div>
+            <div class="mb-3">
+              <label for="katonai_pontok" class="form-label">Katonai pontok</label>
+              <input type="number" class="form-control" id="katonai_pontok" name="katonai_pontok" value="<?php echo htmlspecialchars($team['katonai_pontok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card mb-3">
+          <div class="card-header">Épületek</div>
+          <div class="card-body">
+            <div class="row mb-3">
+              <div class="col">
+                <label for="bankok" class="form-label">Bankok</label>
+                <input type="number" class="form-control" id="bankok" name="bankok" value="<?php echo htmlspecialchars($team['bankok'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+              </div>
+              <div class="col">
+                <label for="gyarak" class="form-label">Gyárak</label>
+                <input type="number" class="form-control" id="gyarak" name="gyarak" value="<?php echo htmlspecialchars($team['gyarak'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col">
+                <label for="egyetemek" class="form-label">Egyetemek</label>
+                <input type="number" class="form-control" id="egyetemek" name="egyetemek" value="<?php echo htmlspecialchars($team['egyetemek'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+              </div>
+              <div class="col">
+                <label for="laktanyak" class="form-label">Laktanyak</label>
+                <input type="number" class="form-control" id="laktanyak" name="laktanyak" value="<?php echo htmlspecialchars($team['laktanyak'] ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-grid">
+      <input type="submit" class="btn btn-primary" name="kezdo_megerosites" value="Kezdő adatok megerősítése">
+    </div>
+  </form>
+</div>
 <?php else: ?>
-    <p class="notfound">Válassz ki csapatot</p>
+<div class="container my-4">
+  <p class="text-center">Válassz ki csapatot</p>
+</div>
 <?php endif; ?>
 
-<script src="/public/static/js/manage.js"></script>
 <?php include(__DIR__ . '/../components/footer.html'); ?>

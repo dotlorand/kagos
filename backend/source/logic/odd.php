@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['discovery_action']) &
         mysqli_stmt_bind_param($stmt, "iiiss", $research_points, $research_era, $research_found, $winner, $team_id);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
-        header("Location: /round?uuid=" . urlencode($team_id));
+        header("Location: /round?uuid=" . urlencode($team_id). "&access_key=" . htmlspecialchars($_GET['access_key'] ?? '', ENT_QUOTES, 'UTF-8'));
         exit;
     }
 }
